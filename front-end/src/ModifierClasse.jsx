@@ -1,51 +1,148 @@
-import React, { useState } from "react";
-import { ArrowLeft, BookOpen, GraduationCap, Calendar, AlertCircle, MapPin, Plus, X } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import React from "react";
+import { ArrowLeft, BookOpen, GraduationCap, Calendar, AlertCircle, MapPin, Users, School } from "lucide-react";
+import { useNavigate, useParams } from "react-router-dom";
+import { useState,useEffect } from "react";
+import axios from "axios";
 
 export default function ModifierClasse() {
   const navigate = useNavigate();
-  const [salles, setSalles] = useState(["Lab Info 1", "Salle TP"]);
 
-  const classe = {
-    name: "2ème Année Génie Logiciel",
-    niveau: "2ème Année",
-    filiere: "Génie Logiciel",
-    anneeScolaire: "2024-2025",
-    status: "Actif",
-    salle: "A101",
-    description: "Classe spécialisée dans le développement logiciel, les méthodes agiles et les technologies modernes."
-  };
+  const [classe, setClasse] = useState(null);
+  const { id } = useParams();
 
-  const handleAjouterSalle = () => {
-    setSalles([...salles, ""]);
-  };
+  const [nom_classe,setNomClasse] = useState("");
+  const [capacite,setCapacite] = useState("");
+  const [annee_scolaire,setAnneeScolaire] = useState("");
+  const [niveau_scolaire_id,setNiveauScolaireId] = useState("");
+  const [filiere_id,setFiliereId] = useState("");
+  const [salle_id,setSalleId] = useState("");
 
-  const handleSupprimerSalle = (index) => {
-    const nouvellesSalles = salles.filter((_, i) => i !== index);
-    setSalles(nouvellesSalles);
-  };
+  const [niveauScolaires,setniveauScolaires] = useState([]);
+  const [filieres,setFilieres] = useState([]);
+  const [salles,setSalles] = useState([]);
 
-  const handleSalleChange = (index, value) => {
-    const nouvellesSalles = [...salles];
-    nouvellesSalles[index] = value;
-    setSalles(nouvellesSalles);
-  };
+  useEffect(() => {
+    async function getOne() {
+      try {
+        const res = await axios.get(`http://127.0.0.1:8000/api/classes/${id}`,{
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+        setClasse(res.data);
+        setNomClasse(res.data?.nom_classe);
+        setCapacite(res.data?.capacite);
+        setAnneeScolaire(res.data?.annee_scolaire);
+        setNiveauScolaireId(res.data?.niveau_scolaire_id);
+        setFiliereId(res.data?.filiere_id);
+        setSalleId(res.data?.salle_id);
+      } catch (error) {
+        console.log(error);
+      }
+    }
+    getOne();
+  }, [id]);
+
+
+  useEffect(() => {
+  
+    axios.get("http://127.0.0.1:8000/api/salles", {
+        headers: {
+           Authorization: `Bearer ${localStorage.getItem("token")}`
+        }
+      }).then((response) => {setSalles(response.data);})
+      .catch((error) => {console.log(error);});
+    }, []);
+
+  useEffect(() => {
+  
+    axios.get("http://127.0.0.1:8000/api/niveauscolaires", {
+        headers: {
+           Authorization: `Bearer ${localStorage.getItem("token")}`
+        }
+      }).then((response) => {setniveauScolaires(response.data);})
+      .catch((error) => {console.log(error);});
+    }, []);
+
+  useEffect(() => {
+
+    axios.get("http://127.0.0.1:8000/api/filieres", {
+      headers: {
+         Authorization: `Bearer ${localStorage.getItem("token")}`
+      }
+    }).then((response) => {setFilieres(response.data);})
+    .catch((error) => {console.log(error);});
+  }, []);
+
+  if (!classe) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <p className="text-gray-500 text-lg">Loading...</p>
+      </div>
+    );
+  }
+
+  function onchangeNomClasse(e){
+        setNomClasse(e.target.value)
+  }
+  function onchangeCapacite(e){
+        setCapacite(Number(e.target.value))
+  }
+  function onchangeAnneeScolaire(e){
+        setAnneeScolaire(e.target.value)
+  }
+  function onchangeNiveauScolaireId(e){
+    setNiveauScolaireId(e.target.value)
+  }
+  function onchangeFiliereId(e){
+        setFiliereId(e.target.value)
+  }
+  function onchangeSalleId(e){
+        setSalleId(e.target.value)
+  }
 
   const handleRetour = () => {
-    navigate("/ListeClasses")
-    console.log("Retour à la liste");
+    navigate("/ListeClasses");
   };
 
-  const handleSubmit = (e) => {
+  async function ClasseUpdate(e) {
     e.preventDefault();
-    console.log("Classe modifiée avec salles:", salles);
-    alert("Classe modifiée avec succès (simulation)");
-  };
 
-  const handleAnnuler = () => {
-    console.log("Annuler");
-    alert("Annuler (simulation)");
-  };
+    const data = {
+      nom_classe,
+      capacite,
+      annee_scolaire,
+      niveau_scolaire_id,
+      filiere_id,
+      salle_id,
+    };
+
+    try {
+      const res = await axios.put(`http://127.0.0.1:8000/api/classes/${id}`,data,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      navigate("/ListeClasses");
+    } catch (error) {
+      console.log(error.response?.data?.errors);
+    }
+  }
+  
+
+  function Anuler(){
+    setNomClasse(classe?.nom_classe);
+    setCapacite(classe?.capacite);
+    setAnneeScolaire(classe?.annee_scolaire);
+    setNiveauScolaireId(classe?.niveau_scolaire_id);
+    setFiliereId(classe?.filiere_id);
+    setSalleId(classe?.salle_id);
+  }
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -61,43 +158,55 @@ export default function ModifierClasse() {
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
             <div className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium mb-2 text-gray-700">
-                    <BookOpen size={14} className="inline mr-1" />
-                    Nom de la classe <span className="text-red-500">*</span>
-                  </label>
-                  <input type="text" defaultValue={classe.name} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#2F5D9F] focus:ring-2 focus:ring-[#2F5D9F]/100 transition-all" />
+                  <div className="grid grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium mb-2 text-gray-700">
+                        <School size={14} className="inline mr-1" />
+                        Nom de la classe <span className="text-red-500">*</span>
+                      </label>
+                      <input type="text" value={nom_classe} onChange={onchangeNomClasse} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#2F5D9F] focus:ring-2 focus:ring-[#2F5D9F]/100 transition-all" placeholder="Ex: 2ème Année Génie Logiciel" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-2 text-gray-700">
+                        <Users size={14} className="inline mr-1" />
+                        Capacité <span className="text-red-500">*</span>
+                      </label>
+                      <input type="number" value={capacite} onChange={onchangeCapacite} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#2F5D9F] focus:ring-2 focus:ring-[#2F5D9F]/100 transition-all" placeholder="Ex: 30" />
+                    </div>
+                  </div>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium mb-2 text-gray-700">
-                    <GraduationCap size={14} className="inline mr-1" />
+                    <BookOpen size={14} className="inline mr-1" />
                     Niveau <span className="text-red-500">*</span>
                   </label>
-                  <select defaultValue={classe.niveau} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#2F5D9F] focus:ring-2 focus:ring-[#2F5D9F]/100 transition-all bg-white">
-                    <option value="1ère Année">1ère Année</option>
-                    <option value="2ème Année">2ème Année</option>
-                    <option value="3ème Année">3ème Année</option>
-                    <option value="Master 1">Master 1</option>
-                    <option value="Master 2">Master 2</option>
+                  <select value={niveau_scolaire_id} onChange={onchangeNiveauScolaireId} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#2F5D9F] focus:ring-2 focus:ring-[#2F5D9F]/100 transition-all bg-white">
+                    <option value="">Sélectionner un niveau</option>
+                    {niveauScolaires.map((niveauscolaire) => (
+                      <option key={niveauscolaire.id} value={niveauscolaire.id}>
+                        {niveauscolaire.nom_niveau}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium mb-2 text-gray-700">
-                    <BookOpen size={14} className="inline mr-1" />
+                    <GraduationCap size={14} className="inline mr-1" />
                     Filière <span className="text-red-500">*</span>
                   </label>
-                  <select defaultValue={classe.filiere} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#2F5D9F] focus:ring-2 focus:ring-[#2F5D9F]/100 transition-all bg-white">
-                    <option value="Génie Logiciel">Génie Logiciel</option>
-                    <option value="Data Science">Data Science</option>
-                    <option value="Cybersécurité">Cybersécurité</option>
-                    <option value="Intelligence Artificielle">Intelligence Artificielle</option>
-                    <option value="Marketing Digital">Marketing Digital</option>
-                    <option value="DevOps">DevOps</option>
+                  <select value={filiere_id} onChange={onchangeFiliereId} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#2F5D9F] focus:ring-2 focus:ring-[#2F5D9F]/100 transition-all bg-white">
+                    <option value="">Sélectionner une filière</option>
+                    {filieres.map((filiere) => (
+                      <option key={filiere.id} value={filiere.id}>
+                        {filiere.nom_filiere}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
@@ -106,78 +215,40 @@ export default function ModifierClasse() {
                     <Calendar size={14} className="inline mr-1" />
                     Année scolaire <span className="text-red-500">*</span>
                   </label>
-                  <select defaultValue={classe.anneeScolaire} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#2F5D9F] focus:ring-2 focus:ring-[#2F5D9F]/100 transition-all bg-white">
-                    <option value="2024-2025">2024-2025</option>
-                    <option value="2023-2024">2023-2024</option>
-                    <option value="2022-2023">2022-2023</option>
+                  <select value={annee_scolaire} onChange={onchangeAnneeScolaire} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#2F5D9F] focus:ring-2 focus:ring-[#2F5D9F]/100 transition-all bg-white">
+                    <option value="2026-2027">2026-2027</option>
+                    <option value="2027-2028">2027-2028</option>
+                    <option value="2028-2029">2028-2029</option>
+                    <option value="2029-2030">2029-2030</option>
                   </select>
                 </div>
 
-                {/* Salle principale - SELECT */}
                 <div>
                   <label className="block text-sm font-medium mb-2 text-gray-700">
                     <MapPin size={14} className="inline mr-1" />
                     Salle principale <span className="text-red-500">*</span>
                   </label>
-                  <select defaultValue={classe.salle} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#2F5D9F] focus:ring-2 focus:ring-[#2F5D9F]/100 transition-all bg-white">
-                    <optgroup label="Salles standard">
-                      <option value="A101">A101</option>
-                      <option value="A102">A102</option>
-                      <option value="A103">A103</option>
-                      <option value="A104">A104</option>
-                      <option value="B101">B101</option>
-                      <option value="B102">B102</option>
-                      <option value="B103">B103</option>
-                      <option value="B104">B104</option>
-                      <option value="C101">C101</option>
-                      <option value="C102">C102</option>
-                      <option value="C103">C103</option>
-                      <option value="C104">C104</option>
-                    </optgroup>
-                    <optgroup label="Laboratoires">
-                      <option value="Lab Info 1">Lab Info 1</option>
-                      <option value="Lab Info 2">Lab Info 2</option>
-                      <option value="Lab Info 3">Lab Info 3</option>
-                      <option value="Lab Data">Lab Data</option>
-                      <option value="Lab IA">Lab IA</option>
-                      <option value="Lab Sécurité">Lab Sécurité</option>
-                    </optgroup>
-                    <optgroup label="Salles spécialisées">
-                      <option value="Salle TP 1">Salle TP 1</option>
-                      <option value="Salle TP 2">Salle TP 2</option>
-                      <option value="Amphi A">Amphi A</option>
-                      <option value="Amphi B">Amphi B</option>
-                    </optgroup>
+                  <select value={salle_id} onChange={onchangeSalleId} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#2F5D9F] focus:ring-2 focus:ring-[#2F5D9F]/100 transition-all bg-white">
+                    <option value="">Sélectionner une salle</option>
+                    {salles.map((salle) => (
+                      <option key={salle.id} value={salle.id}>
+                        {salle.nom_salle}
+                      </option>
+                    ))}
                   </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-2 text-gray-700">
-                    <AlertCircle size={14} className="inline mr-1" />
-                    Statut
-                  </label>
-                  <select defaultValue={classe.status} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#2F5D9F] focus:ring-2 focus:ring-[#2F5D9F]/100 transition-all bg-white">
-                    <option value="Actif">Actif</option>
-                    <option value="Inactif">Inactif</option>
-                  </select>
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium mb-2 text-gray-700">Description</label>
-                  <textarea rows="3" defaultValue={classe.description} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#2F5D9F] focus:ring-2 focus:ring-[#2F5D9F]/100 transition-all" />
                 </div>
               </div>
 
               <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-gray-200">
-                <button type="button" onClick={handleAnnuler} className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors">
+                <button type="button" onClick={Anuler} className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors">
                   Annuler
                 </button>
-                <button type="submit" className="px-4 py-2 bg-[#2F5D9F] text-white rounded-lg font-medium flex items-center gap-2 hover:bg-[#1e3d6b] transition-colors shadow-sm">
+                <button onClick={ClasseUpdate} className="px-4 py-2 bg-[#E55B2D] text-white rounded-lg font-medium flex items-center gap-2 hover:bg-[#c44d24] transition-colors shadow-sm">
                   Modifier la classe
                 </button>
               </div>
             </div>
-          </form>
+          </div>
         </div>
       </div>
     </div>

@@ -1,32 +1,116 @@
 import React from "react";
 import { ArrowLeft, MapPin, Users } from "lucide-react";
+import { useNavigate,useParams } from "react-router-dom";
+import { useState,useEffect } from "react";
+import axios from "axios";
 
 export default function ModifierSalle() {
-  const salle = {
-    id: 1,
-    name: "Lab Info 1",
-    type: "Laboratoire",
-    capacite: 20,
-    batiment: "Bâtiment B",
-    etage: "Rez-de-chaussée",
-    status: "Disponible",
-    description: "Laboratoire informatique équipé pour les cours de programmation et développement."
-  };
+  const navigate = useNavigate()
+  const { id } = useParams();
+
+  const [nom_salle,setNomSalle] = useState("");
+  const [type_salle,setTypeSalle] = useState("");
+  const [capacite,setCapacite] = useState("");
+  const [etage,setEtage] = useState("");
+  const [statut,setStatut] = useState("Disponible");
+  const [description,setDescription] = useState("");
+  const [originalData, setOriginalData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function getOne() {
+      try {
+        const res = await axios.get(`http://127.0.0.1:8000/api/salles/${id}`,{
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+        
+        setNomSalle(res.data?.nom_salle);
+        setTypeSalle(res.data?.type_salle);
+        setCapacite(res.data?.capacite);
+        setEtage(res.data?.etage);
+        setStatut(res.data?.statut);
+        setDescription(res.data?.description);
+        setLoading(false);
+        setOriginalData(res.data);
+      } catch (error) {
+        console.log(error);
+        setLoading(false);
+      }
+    }
+    getOne();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        Loading...
+      </div>
+    );
+  }
+
+  function onchangeNomSalle(e){
+    setNomSalle(e.target.value)
+  }
+  function onchangeTypeSalle(e){
+    setTypeSalle(e.target.value)
+  }
+  function onchangeCapacite(e){
+    setCapacite(Number(e.target.value))
+  }
+  function onchangeEtage(e){
+    setEtage(e.target.value)
+  }
+  function onchangeStatut(e){
+    setStatut(e.target.value)
+  }
+  function onchangeDescription(e){
+    setDescription(e.target.value)
+  }
+
+  async function SalleModifier(e) {
+    e.preventDefault();
+
+    const data = {
+      nom_salle,
+      type_salle,
+      capacite,
+      etage,
+      statut,
+      description,
+    };
+
+    try {
+      const res = await axios.put(`http://127.0.0.1:8000/api/salles/${id}`,data,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      navigate("/ListeSalles");
+    } catch (error) {
+      console.log(error.response?.data?.errors);
+    }
+  }
+
+  function Anuler(){
+    if (!originalData) return;
+
+    setNomSalle(originalData.nom_salle);
+    setTypeSalle(originalData.type_salle);
+    setCapacite(originalData.capacite);
+    setEtage(originalData.etage);
+    setStatut(originalData.statut);
+    setDescription(originalData.description);
+  }
 
   const handleRetour = () => {
-    console.log("Retour à la liste");
-    alert("Retour à la liste (simulation)");
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log("Salle modifiée");
-    alert("Salle modifiée avec succès (simulation)");
-  };
-
-  const handleAnnuler = () => {
-    console.log("Annuler");
-    alert("Annuler (simulation)");
+    navigate("/ListeSalles")
   };
 
   return (
@@ -43,7 +127,7 @@ export default function ModifierSalle() {
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
             <div className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
@@ -51,22 +135,14 @@ export default function ModifierSalle() {
                     <MapPin size={14} className="inline mr-1" />
                     Nom de la salle <span className="text-red-500">*</span>
                   </label>
-                  <input 
-                    type="text" 
-                    defaultValue={salle.name}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#2F5D9F] focus:ring-2 focus:ring-[#2F5D9F]/100 transition-all" 
-                    placeholder="Ex: A101, Lab Info 1" 
-                  />
+                  <input type="text" value={nom_salle} onChange={onchangeNomSalle} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#2F5D9F] focus:ring-2 focus:ring-[#2F5D9F]/100 transition-all" placeholder="Ex: A101, Lab Info 1" />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium mb-2 text-gray-700">
                     Type de salle <span className="text-red-500">*</span>
                   </label>
-                  <select 
-                    defaultValue={salle.type}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#2F5D9F] focus:ring-2 focus:ring-[#2F5D9F]/100 transition-all bg-white"
-                  >
+                  <select value={type_salle} onChange={onchangeTypeSalle} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#2F5D9F] focus:ring-2 focus:ring-[#2F5D9F]/100 transition-all bg-white">
                     <option value="Salle standard">Salle standard</option>
                     <option value="Laboratoire">Laboratoire</option>
                     <option value="Amphithéâtre">Amphithéâtre</option>
@@ -80,35 +156,12 @@ export default function ModifierSalle() {
                     <Users size={14} className="inline mr-1" />
                     Capacité <span className="text-red-500">*</span>
                   </label>
-                  <input 
-                    type="number" 
-                    defaultValue={salle.capacite}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#2F5D9F] focus:ring-2 focus:ring-[#2F5D9F]/100 transition-all" 
-                    placeholder="Nombre de places" 
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-2 text-gray-700">
-                    Bâtiment <span className="text-red-500">*</span>
-                  </label>
-                  <select 
-                    defaultValue={salle.batiment}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#2F5D9F] focus:ring-2 focus:ring-[#2F5D9F]/100 transition-all bg-white"
-                  >
-                    <option value="Bâtiment A">Bâtiment A</option>
-                    <option value="Bâtiment B">Bâtiment B</option>
-                    <option value="Bâtiment C">Bâtiment C</option>
-                    <option value="Bâtiment D">Bâtiment D</option>
-                  </select>
+                  <input type="number" value={capacite} onChange={onchangeCapacite} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#2F5D9F] focus:ring-2 focus:ring-[#2F5D9F]/100 transition-all" placeholder="Nombre de places" />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium mb-2 text-gray-700">Étage</label>
-                  <select 
-                    defaultValue={salle.etage}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#2F5D9F] focus:ring-2 focus:ring-[#2F5D9F]/100 transition-all bg-white"
-                  >
+                  <select value={etage} onChange={onchangeEtage} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#2F5D9F] focus:ring-2 focus:ring-[#2F5D9F]/100 transition-all bg-white">
                     <option value="Rez-de-chaussée">Rez-de-chaussée</option>
                     <option value="1er étage">1er étage</option>
                     <option value="2ème étage">2ème étage</option>
@@ -118,10 +171,7 @@ export default function ModifierSalle() {
 
                 <div>
                   <label className="block text-sm font-medium mb-2 text-gray-700">Statut</label>
-                  <select 
-                    defaultValue={salle.status}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#2F5D9F] focus:ring-2 focus:ring-[#2F5D9F]/100 transition-all bg-white"
-                  >
+                  <select value={statut} onChange={onchangeStatut} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#2F5D9F] focus:ring-2 focus:ring-[#2F5D9F]/100 transition-all bg-white">
                     <option value="Disponible">Disponible</option>
                     <option value="Occupée">Occupée</option>
                     <option value="En maintenance">En maintenance</option>
@@ -130,32 +180,20 @@ export default function ModifierSalle() {
 
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium mb-2 text-gray-700">Description</label>
-                  <textarea 
-                    rows="3" 
-                    defaultValue={salle.description}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#2F5D9F] focus:ring-2 focus:ring-[#2F5D9F]/100 transition-all" 
-                    placeholder="Description de la salle..."
-                  />
+                  <textarea value={description} onChange={onchangeDescription} rows="3" className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#2F5D9F] focus:ring-2 focus:ring-[#2F5D9F]/100 transition-all" placeholder="Description de la salle..."/>
                 </div>
               </div>
 
               <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-gray-200">
-                <button 
-                  type="button" 
-                  onClick={handleAnnuler} 
-                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
-                >
+                <button type="button" onClick={Anuler} className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors">
                   Annuler
                 </button>
-                <button 
-                  type="submit" 
-                  className="px-4 py-2 bg-[#2F5D9F] text-white rounded-lg font-medium flex items-center gap-2 hover:bg-[#1e3d6b] transition-colors shadow-sm"
-                >
+                <button onClick={SalleModifier} className="px-4 py-2 bg-[#2F5D9F] text-white rounded-lg font-medium flex items-center gap-2 hover:bg-[#1e3d6b] transition-colors shadow-sm">
                   Modifier la salle
                 </button>
               </div>
             </div>
-          </form>
+          </div>
         </div>
       </div>
     </div>

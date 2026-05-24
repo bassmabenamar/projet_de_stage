@@ -1,32 +1,63 @@
 import React from "react";
-import { ArrowLeft, User, Mail, Phone, Briefcase, GraduationCap, Calendar, Info, CheckCircle, XCircle } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { ArrowLeft, User, Mail,MapPin,Users, Phone, Briefcase,School,Coins, GraduationCap, Calendar, Info, CheckCircle, XCircle } from "lucide-react";
+import { useNavigate,useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import axios from "axios";
 
 export default function DetailsFormateur() {
   const navigate = useNavigate();
-  const formateur = {
-    id: 1,
-    name: "Dr. Karim Benali",
-    email: "karim.benali@amity.com",
-    phone: "+212 6XX XXX XXX",
-    specialite: "Développement Web",
-    experience: "8 ans",
-    status: "Actif",
-    bio: "Expert en développement web avec plus de 8 ans d'expérience. Spécialisé en React, Node.js et technologies modernes.",
-    createdAt: "2023-01-15",
-    updatedAt: "2024-03-20",
-    diplome: "Doctorat en Informatique",
-    photoUrl: null
-  };
+
+  const [formateur, setFormateur] = useState(null);
+  const { id } = useParams();
+
+  useEffect(() => {
+    async function getOne() {
+      try {
+        const res = await axios.get(`http://127.0.0.1:8000/api/formateurs/${id}`,{
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+        setFormateur(res.data);
+        console.log(res.data);
+      } catch (error) {
+        console.log(error);
+      }
+    }
+    getOne();
+  }, [id]);
+
+    if (!formateur) return <div>Loading...</div>;
 
   const handleRetour = () => {
     navigate("/ListeFormateurs")
-    console.log("Retour à la liste");
   };
 
   const getInitials = () => {
-    return `${formateur.name.split(' ')[1]?.[0] || ''}${formateur.name.split(' ')[2]?.[0] || ''}`.toUpperCase();
+    const nom = formateur?.nom || "";
+    const prenom = formateur?.prenom || "";
+
+    return `${prenom?.[0] || ""}${nom?.[0] || ""}`.toUpperCase();
   };
+
+  async function DeleteFormateur(id) {
+
+    const confirmation = window.confirm("Voulez-vous vraiment supprimer cet formateur ?");
+    if (!confirmation) {return;}
+    try {
+      await axios.delete(`http://127.0.0.1:8000/api/formateurs/${id}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+
+      navigate("/ListeFormateurs");
+
+      }catch (error) {
+      console.log(error);
+    }
+  }
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -48,9 +79,9 @@ export default function DetailsFormateur() {
                 {getInitials()}
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-gray-800">{formateur.name}</h2>
+                <h2 className="text-2xl font-bold text-gray-800">{formateur.nom} {formateur.prenom}</h2>
                 <div className="flex items-center gap-3 mt-2">
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${formateur.status === "Actif" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${formateur.status === "actif" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
                     {formateur.status}
                   </span>
                   <span className="text-sm text-gray-500">ID: {formateur.id}</span>
@@ -69,7 +100,7 @@ export default function DetailsFormateur() {
                 <div className="space-y-3">
                   <div className="flex items-start gap-3">
                     <User size={16} className="text-gray-400 mt-0.5" />
-                    <div><p className="text-xs text-gray-500">Nom complet</p><p className="text-sm font-medium text-gray-800">{formateur.name}</p></div>
+                    <div><p className="text-xs text-gray-500">Nom complet</p><p className="text-sm font-medium text-gray-800">{formateur.nom} {formateur.prenom}</p></div>
                   </div>
                   <div className="flex items-start gap-3">
                     <Mail size={16} className="text-gray-400 mt-0.5" />
@@ -78,6 +109,14 @@ export default function DetailsFormateur() {
                   <div className="flex items-start gap-3">
                     <Phone size={16} className="text-gray-400 mt-0.5" />
                     <div><p className="text-xs text-gray-500">Téléphone</p><p className="text-sm font-medium text-gray-800">{formateur.phone}</p></div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <MapPin size={16} className="text-gray-400 mt-0.5" />
+                    <div><p className="text-xs text-gray-500">Adresse</p><p className="text-sm font-medium text-gray-800">{formateur.adresse}</p></div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <Users size={16} className="text-gray-400 mt-0.5" />
+                    <div><p className="text-xs text-gray-500">Genre</p><p className="text-sm font-medium text-gray-800">{formateur.genre}</p></div>
                   </div>
                 </div>
               </div>
@@ -93,16 +132,32 @@ export default function DetailsFormateur() {
                     <div><p className="text-xs text-gray-500">Spécialité</p><p className="text-sm font-medium text-gray-800">{formateur.specialite}</p></div>
                   </div>
                   <div className="flex items-start gap-3">
-                    <GraduationCap size={16} className="text-gray-400 mt-0.5" />
-                    <div><p className="text-xs text-gray-500">Années d'expérience</p><p className="text-sm font-medium text-gray-800">{formateur.experience}</p></div>
+                    <Coins size={16} className="text-gray-400 mt-0.5" />
+                    <div><p className="text-xs text-gray-500">Salaire</p><p className="text-sm font-medium text-gray-800">{formateur.salaire}</p></div>
                   </div>
                   <div className="flex items-start gap-3">
-                    <GraduationCap size={16} className="text-gray-400 mt-0.5" />
-                    <div><p className="text-xs text-gray-500">Diplôme</p><p className="text-sm font-medium text-gray-800">{formateur.diplome}</p></div>
+                    <School size={16} className="text-gray-400 mt-0.5" />
+                    <div>
+                      <p className="text-xs text-gray-500">Classe</p>
+
+                      <div className="text-sm font-medium text-gray-800 flex flex-wrap gap-2">
+                        {formateur.classes_formateur &&
+                        formateur.classes_formateur.length > 0 ? (
+                          formateur.classes_formateur.map((classe) => (
+                            <span key={classe.id} className="px-2 py-1 bg-blue-100 text-blue-700 rounded-md">
+                              {classe.nom_classe}
+                            </span>
+                          ))
+                        ) : (
+                          <span>Aucune classe</span>
+                        )}
+                      </div>
+                    </div>
                   </div>
+                  
                   <div className="flex items-start gap-3">
-                    {formateur.status === "Actif" ? <CheckCircle size={16} className="text-green-500 mt-0.5" /> : <XCircle size={16} className="text-red-500 mt-0.5" />}
-                    <div><p className="text-xs text-gray-500">Statut</p><p className={`text-sm font-medium ${formateur.status === "Actif" ? "text-green-700" : "text-red-700"}`}>{formateur.status}</p></div>
+                    {formateur.status === "actif" ? <CheckCircle size={16} className="text-green-500 mt-0.5" /> : <XCircle size={16} className="text-red-500 mt-0.5" />}
+                    <div><p className="text-xs text-gray-500">Statut</p><p className={`text-sm font-medium ${formateur.status === "actif" ? "text-green-700" : "text-red-700"}`}>{formateur.status}</p></div>
                   </div>
                 </div>
               </div>
@@ -111,25 +166,17 @@ export default function DetailsFormateur() {
             <div className="space-y-6">
               <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                  <Info size={20} className="text-[#2F5D9F]" />
-                  Biographie
-                </h3>
-                <p className="text-sm text-gray-700 leading-relaxed">{formateur.bio}</p>
-              </div>
-
-              <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                   <Calendar size={20} className="text-[#2F5D9F]" />
                   Dates importantes
                 </h3>
                 <div className="space-y-3">
                   <div className="flex items-start gap-3">
                     <Calendar size={16} className="text-gray-400 mt-0.5" />
-                    <div><p className="text-xs text-gray-500">Date d'embauche</p><p className="text-sm font-medium text-gray-800">{formateur.createdAt}</p></div>
+                    <div><p className="text-xs text-gray-500">Date d'embauche</p><p className="text-sm font-medium text-gray-800">{formateur.date_embauche}</p></div>
                   </div>
                   <div className="flex items-start gap-3">
                     <Calendar size={16} className="text-gray-400 mt-0.5" />
-                    <div><p className="text-xs text-gray-500">Dernière modification</p><p className="text-sm font-medium text-gray-800">{formateur.updatedAt}</p></div>
+                    <div><p className="text-xs text-gray-500">Dernière modification</p><p className="text-sm font-medium text-gray-800">{new Date(formateur.updated_at).toLocaleString()}</p></div>
                   </div>
                 </div>
               </div>
@@ -137,8 +184,8 @@ export default function DetailsFormateur() {
               <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4">Actions</h3>
                 <div className="flex gap-3">
-                  <button onClick={() => navigate("/ModifierFormateur")} className="flex-1 px-4 py-2 bg-[#2F5D9F] text-white rounded-lg font-medium hover:bg-[#1e3d6b] transition-colors">Modifier</button>
-                  <button onClick={() => navigate("/ListeFormateurs")} className="flex-1 px-4 py-2 border border-red-500 text-red-500 rounded-lg font-medium hover:bg-red-50 transition-colors">Supprimer</button>
+                  <button onClick={() => navigate(`/ModifierFormateur/${formateur.id}`)}className="flex-1 px-4 py-2 bg-[#2F5D9F] text-white rounded-lg font-medium hover:bg-[#1e3d6b] transition-colors">Modifier</button>
+                  <button onClick={() => DeleteFormateur(formateur.id)} className="flex-1 px-4 py-2 border border-red-500 text-red-500 rounded-lg font-medium hover:bg-red-50 transition-colors">Supprimer</button>
                 </div>
               </div>
             </div>

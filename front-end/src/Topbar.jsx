@@ -6,7 +6,7 @@ import axios from "axios";
 
 const springTransition = { type: "spring", stiffness: 300, damping: 24 };
 
-export function Topbar() {
+export function Topbar() {    
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   
@@ -31,6 +31,7 @@ export function Topbar() {
 
   
 
+  console.log(user?.profile_image)
   const imageUrl = user?.profile_image
     ? `http://127.0.0.1:8000/storage/${user.profile_image}`
     : null;
@@ -68,8 +69,7 @@ export function Topbar() {
       transition={springTransition} className="bg-white/80 backdrop-blur-md border-b border-slate-100 px-6 py-3 flex items-center justify-between sticky top-0 z-30">
       {/* Search Bar - Amity Style */}
       <div className="relative w-[450px]">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
-        <input type="text" placeholder="Search ..." className="w-full bg-slate-50 border border-transparent rounded-xl py-3 pl-12 pr-4 text-sm focus:bg-white focus:ring-2 focus:ring-[#2F5D9F]/100 transition-all outline-none"/>
+        
       </div>
       
       {/* Right Actions */}

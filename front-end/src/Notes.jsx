@@ -1,6 +1,13 @@
 import { Search, User, BookOpen, Filter } from "lucide-react";
+import { useState,useEffect } from "react";
 
 export default function Notes() {
+  const [search, setSearch] = useState("");
+  const [matiere, setMatiere] = useState("");
+  const [type, setType] = useState("")
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const notesParPage = 20;
   // Données statiques des notes
   const notes = [
     { id: 1, nom: "Sarah Martin", initials: "SM", classe: "2ème Année GL", niveau: "2ème Année", matiere: "Mathématiques", note: 15, maxNote: 20, date: "2024-06-10", type: "Devoir" },
@@ -12,6 +19,23 @@ export default function Notes() {
     { id: 7, nom: "Sarah Martin", initials: "SM", classe: "2ème Année GL", niveau: "2ème Année", matiere: "Algorithmique", note: 17, maxNote: 20, date: "2024-06-13", type: "Examen" },
     { id: 8, nom: "Karim Benali", initials: "KB", classe: "2ème Année GL", niveau: "2ème Année", matiere: "Algorithmique", note: 11, maxNote: 20, date: "2024-06-13", type: "Examen" },
   ];
+
+  const filteredNotes = notes.filter((n) => {
+    const matchSearch =
+      `${n.nom} ${n.initials}`
+        .toLowerCase()
+        .includes(search.toLowerCase());
+
+    const matchMatiere = matiere ? n.matiere === matiere : true;
+    const matchType = type ? n.type === type : true;
+
+    return matchSearch && matchMatiere && matchType;
+  });
+
+  const indexDernierNote = currentPage * notesParPage;
+  const indexPremierNote = indexDernierNote - notesParPage;
+  const totalPages = Math.ceil(filteredNotes.length / notesParPage);
+  const notesActuels = filteredNotes.slice(indexPremierNote,indexDernierNote);
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -33,11 +57,11 @@ export default function Notes() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="relative">
                 <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input type="text" placeholder="Rechercher par nom..." className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#2F5D9F] focus:ring-2 focus:ring-[#2F5D9F]/20 transition-all" />
+                <input type="text" placeholder="Rechercher par nom..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#E55B2D] focus:ring-2 focus:ring-[#E55B2D]/80 transition-all" />
               </div>
               <div className="relative">
                 <BookOpen size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <select className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#2F5D9F] focus:ring-2 focus:ring-[#2F5D9F]/20 transition-all bg-white">
+                <select value={matiere} onChange={(e) => setMatiere(e.target.value)} className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#E55B2D] focus:ring-2 focus:ring-[#E55B2D]/80 transition-all bg-white">
                   <option value="">Toutes les matières</option>
                   <option value="Mathématiques">Mathématiques</option>
                   <option value="Programmation Web">Programmation Web</option>
@@ -47,14 +71,14 @@ export default function Notes() {
               </div>
               <div className="relative">
                 <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <select className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#2F5D9F] focus:ring-2 focus:ring-[#2F5D9F]/20 transition-all bg-white">
+                <select  value={type} onChange={(e) => setType(e.target.value)} className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#E55B2D] focus:ring-2 focus:ring-[#E55B2D]/80 transition-all bg-white">
                   <option value="">Tous les types</option>
                   <option value="Devoir">Devoir</option>
                   <option value="Examen">Examen</option>
                 </select>
               </div>
               <div>
-                <button className="w-full px-4 py-2 border border-gray-300 bg-[#E55B2D] rounded-lg text-sm text-white hover:bg-[#c44d24] transition-colors">
+                <button onClick={() => {setSearch("");setMatiere("");setType("");}} className="w-full px-4 py-2 border border-gray-300 bg-[#E55B2D] rounded-lg text-sm text-white hover:bg-[#c44d24] transition-colors">
                   Réinitialiser
                 </button>
               </div>
@@ -79,7 +103,7 @@ export default function Notes() {
                     </tr>
                   </thead>
                   <tbody>
-                    {notes.map((note, index) => (
+                    {notesActuels.map((note, index) => (
                       <tr key={note.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                         <td className="px-6 py-4 text-sm text-gray-700 whitespace-nowrap">{index + 1}</td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -119,18 +143,25 @@ export default function Notes() {
 
             {/* Footer avec pagination */}
             <div className="px-6 py-4 border-t border-gray-200 flex justify-between items-center flex-wrap gap-4">
-              <p className="text-sm text-gray-500 whitespace-nowrap">Total: {notes.length} notes</p>
+              <p className="text-sm text-gray-500 whitespace-nowrap">
+                Total: {notes.length} notes
+              </p>
               <div className="flex gap-2 flex-wrap">
-                <button className="px-3 py-1 border border-gray-300 rounded text-sm text-gray-600 hover:bg-gray-50 transition-colors whitespace-nowrap">
+                <button onClick={() => setCurrentPage(currentPage - 1)} disabled={currentPage === 1} className="px-3 py-1 border border-gray-300 rounded text-sm text-gray-600 disabled:opacity-50">
                   Précédent
                 </button>
-                <button className="px-3 py-1 bg-[#2F5D9F] text-white rounded text-sm hover:bg-[#1e3d6b] transition-colors whitespace-nowrap">
-                  1
-                </button>
-                <button className="px-3 py-1 border border-gray-300 rounded text-sm text-gray-600 hover:bg-gray-50 transition-colors whitespace-nowrap">
-                  2
-                </button>
-                <button className="px-3 py-1 border border-gray-300 rounded text-sm text-gray-600 hover:bg-gray-50 transition-colors whitespace-nowrap">
+                {[...Array(totalPages)].map((_, index) => (
+                  <button key={index} onClick={() => setCurrentPage(index + 1)}
+                    className={`px-3 py-1 rounded text-sm ${
+                      currentPage === index + 1
+                        ? "bg-[#2F5D9F] text-white"
+                        : "border border-gray-300 text-gray-600"
+                    }`}
+                  >
+                    {index + 1}
+                  </button>
+                ))}
+                <button onClick={() => setCurrentPage(currentPage + 1)} disabled={currentPage === totalPages} className="px-3 py-1 border border-gray-300 rounded text-sm text-gray-600 disabled:opacity-50">
                   Suivant
                 </button>
               </div>

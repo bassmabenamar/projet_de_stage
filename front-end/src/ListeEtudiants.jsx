@@ -1,37 +1,69 @@
-import React, { useState } from "react";
-import { Plus, Edit, Trash2, Eye } from "lucide-react";
+import { Plus, Edit, Trash2, Eye,Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useState,useEffect } from "react";
+import axios from "axios";
 
 export default function ListeEtudiants() {
   const navigate = useNavigate();
-  // Données statiques pour les étudiants
-  const [etudiants] = useState([
-    { id: 1, name: "Sarah Martin", email: "sarah.martin@amity.com", phone: "+212 6XX XXX XXX", status: "Actif", class: "2ème Année" },
-    { id: 2, name: "Karim Benali", email: "karim.benali@amity.com", phone: "+212 6XX XXX XXX", status: "Actif", class: "1ère Année" },
-    { id: 3, name: "Leila Ouazzani", email: "leila.ouazzani@amity.com", phone: "+212 6XX XXX XXX", status: "Inactif", class: "3ème Année" },
-    { id: 4, name: "Mohamed Tazi", email: "mohamed.tazi@amity.com", phone: "+212 6XX XXX XXX", status: "Actif", class: "2ème Année" },
-    { id: 5, name: "Fatima Zahra", email: "fatima.zahra@amity.com", phone: "+212 6XX XXX XXX", status: "Actif", class: "1ère Année" },
-  ]);
+  const [search, setSearch] = useState("");
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const etudiantsParPage = 5;
+
+  const [etudiants,setEtudiants] = useState([]);
+  useEffect(()=>{
+    async function getEtudiants(){
+      try {
+      const donneEtudiants = await axios.get("http://127.0.0.1:8000/api/etudiants",{
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem("token")}`
+                }
+            });
+            setEtudiants(donneEtudiants.data)
+          }
+           catch (error) {
+            console.log(error);
+          }
+        }getEtudiants(); 
+  },[])
+
+  async function DeleteEtudiant(id) {
+
+    const confirmation = window.confirm("Voulez-vous vraiment supprimer cet étudiant ?");
+    if (!confirmation) {return;}
+    try {
+      await axios.delete(`http://127.0.0.1:8000/api/etudiants/${id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+      setEtudiants((prev) => prev.filter((etudiant) => etudiant.id !== id));
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  const filteredEtudiants = etudiants.filter((e) =>
+    `${e.nom ?? ""} ${e.prenom ?? ""}`
+      .toLowerCase()
+      .includes(search.toLowerCase().trim())
+  );
+
+  const indexDernierEtudiant = currentPage * etudiantsParPage;
+  const indexPremierEtudiant = indexDernierEtudiant - etudiantsParPage;
+  const totalPages = Math.ceil(filteredEtudiants.length / etudiantsParPage);
+  const etudiantsActuels = filteredEtudiants.slice(indexPremierEtudiant,indexDernierEtudiant);
 
   const handleAjouter = () => {
     navigate("/AjouterEtudiant")
-    console.log("Ajouter étudiant");
   };
 
-  const handleModifier = (id) => {
-    navigate("/ModifierEtudiant")
-    console.log("Modifier étudiant", id);
-  };
-
-  const handleSupprimer = (id) => {
-    console.log("Supprimer étudiant", id);
-    alert(`Supprimer étudiant ${id} (simulation)`);
-  };
-
-  const handleDetails = (id) => {
-    console.log("Détails étudiant", id);
-    navigate("/DetailsEtudiant")
-  };
+  // const handleModifier = (id) => {
+  //   navigate("/ModifierEtudiant")
+  //   console.log("Modifier étudiant", id);
+  // };
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -49,6 +81,11 @@ export default function ListeEtudiants() {
             </button>
           </div>
 
+          <div className="relative mb-5">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Rechercher un étudiant..."className="w-full md:w-96 bg-slate-50 border border-gray-200 rounded-xl py-3 pl-12 pr-4 text-sm focus:bg-white focus:ring-2 focus:ring-[#E55B2D] focus:border-transparent transition-all outline-none"/>
+          </div>
+          
           {/* Tableau des étudiants */}
           <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
             <div className="overflow-x-auto">
@@ -66,27 +103,27 @@ export default function ListeEtudiants() {
                     </tr>
                   </thead>
                   <tbody>
-                    {etudiants.map((etudiant, index) => (
+                    {etudiantsActuels.map((etudiant, index) => (
                       <tr key={etudiant.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                        <td className="px-6 py-4 text-sm text-gray-700 whitespace-nowrap">{index + 1}</td>
+                        <td className="px-6 py-4 text-sm text-gray-700 whitespace-nowrap">{indexPremierEtudiant + index + 1}</td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#2F5D9F] to-[#E55B2D] flex items-center justify-center text-white text-xs font-medium">
-                              {etudiant.name.charAt(0)}{etudiant.name.split(' ')[1]?.charAt(0) || ''}
+                              {etudiant.nom?.charAt(0)}{etudiant.nom?.split(' ')[1]?.charAt(0) || ''}
                             </div>
-                            <span className="text-sm font-medium text-gray-800">{etudiant.name}</span>
+                            <span className="text-sm font-medium text-gray-800">{etudiant.nom} {etudiant.prenom}</span>
                           </div>
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-600 whitespace-nowrap">{etudiant.email}</td>
                         <td className="px-6 py-4 text-sm text-gray-600 whitespace-nowrap">{etudiant.phone}</td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className="px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700 whitespace-nowrap">
-                            {etudiant.class}
+                            {etudiant.classe?.nom_classe}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
-                            etudiant.status === "Actif" 
+                            etudiant.status === "actif" 
                               ? "bg-green-100 text-green-700" 
                               : "bg-red-100 text-red-700"
                           }`}>
@@ -95,25 +132,13 @@ export default function ListeEtudiants() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center gap-2">
-                            <button 
-                              onClick={() => handleDetails(etudiant.id)} 
-                              className="p-1.5 text-blue-500 hover:text-blue-700 transition-colors" 
-                              title="Détails"
-                            >
+                            <button onClick={() => navigate(`/DetailsEtudiant/${etudiant.id}`)} className="p-1.5 text-blue-500 hover:text-blue-700 transition-colors" title="Détails">
                               <Eye size={18} />
                             </button>
-                            <button 
-                              onClick={() => handleModifier(etudiant.id)} 
-                              className="p-1.5 text-[#2F5D9F] hover:text-[#1e3d6b] transition-colors" 
-                              title="Modifier"
-                            >
+                            <button onClick={() => navigate(`/ModifierEtudiant/${etudiant.id}`)} className="p-1.5 text-[#2F5D9F] hover:text-[#1e3d6b] transition-colors" title="Modifier">
                               <Edit size={18} />
                             </button>
-                            <button 
-                              onClick={() => handleSupprimer(etudiant.id)} 
-                              className="p-1.5 text-red-500 hover:text-red-700 transition-colors" 
-                              title="Supprimer"
-                            >
+                            <button onClick={() => DeleteEtudiant(etudiant.id)} className="p-1.5 text-red-500 hover:text-red-700 transition-colors" title="Supprimer">
                               <Trash2 size={18} />
                             </button>
                           </div>
@@ -127,21 +152,25 @@ export default function ListeEtudiants() {
             
             {/* Footer avec pagination */}
             <div className="px-6 py-4 border-t border-gray-200 flex justify-between items-center flex-wrap gap-4">
-              <p className="text-sm text-gray-500 whitespace-nowrap">Total: {etudiants.length} étudiants</p>
+              <p className="text-sm text-gray-500 whitespace-nowrap">
+                Total: {etudiants.length} étudiants
+              </p>
               <div className="flex gap-2 flex-wrap">
-                <button className="px-3 py-1 border border-gray-300 rounded text-sm text-gray-600 hover:bg-gray-50 transition-colors whitespace-nowrap">
+                <button onClick={() => setCurrentPage(currentPage - 1)} disabled={currentPage === 1} className="px-3 py-1 border border-gray-300 rounded text-sm text-gray-600 disabled:opacity-50">
                   Précédent
                 </button>
-                <button className="px-3 py-1 bg-[#2F5D9F] text-white rounded text-sm hover:bg-[#1e3d6b] transition-colors whitespace-nowrap">
-                  1
-                </button>
-                <button className="px-3 py-1 border border-gray-300 rounded text-sm text-gray-600 hover:bg-gray-50 transition-colors whitespace-nowrap">
-                  2
-                </button>
-                <button className="px-3 py-1 border border-gray-300 rounded text-sm text-gray-600 hover:bg-gray-50 transition-colors whitespace-nowrap">
-                  3
-                </button>
-                <button className="px-3 py-1 border border-gray-300 rounded text-sm text-gray-600 hover:bg-gray-50 transition-colors whitespace-nowrap">
+                {[...Array(totalPages)].map((_, index) => (
+                  <button key={index} onClick={() => setCurrentPage(index + 1)}
+                    className={`px-3 py-1 rounded text-sm ${
+                      currentPage === index + 1
+                        ? "bg-[#2F5D9F] text-white"
+                        : "border border-gray-300 text-gray-600"
+                    }`}
+                  >
+                    {index + 1}
+                  </button>
+                ))}
+                <button onClick={() => setCurrentPage(currentPage + 1)} disabled={currentPage === totalPages} className="px-3 py-1 border border-gray-300 rounded text-sm text-gray-600 disabled:opacity-50">
                   Suivant
                 </button>
               </div>

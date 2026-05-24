@@ -28,7 +28,7 @@ export default function Profile() {
           }
         });
         setUser(res.data);
-
+        console.log(res.data)
         setNom(res.data.nom || "");
         setPrenom(res.data.prenom || "");
         setEmail(res.data.email || "");
@@ -98,7 +98,7 @@ export default function Profile() {
     const res = await axios.post(`http://127.0.0.1:8000/api/profile`,formData,
       {
         headers: {
-                  Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
         }
       }
     )
@@ -106,7 +106,7 @@ export default function Profile() {
       navigate("/Dashboard");
     }
     } catch (err) {
-      console.log(err);
+      console.log(err.response.data);
     }
             
   }

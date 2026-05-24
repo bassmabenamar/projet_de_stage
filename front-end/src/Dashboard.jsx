@@ -1,34 +1,114 @@
-import {
-  Users,
-  GraduationCap,
-  BookOpen,
-  ClipboardList,
-  Wallet,
-  CreditCard,
-  CheckCircle2,
-  AlertCircle,
-} from "lucide-react";
-import {
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  CartesianGrid,
-  PieChart,
-  Pie,
-  Cell,
-  Legend,
-} from "recharts";
+import {Users,GraduationCap,BookOpen,ClipboardList,Wallet,CreditCard,CheckCircle2,AlertCircle,} from "lucide-react";
+import {ResponsiveContainer,BarChart,Bar,XAxis,YAxis,Tooltip,CartesianGrid,PieChart,Pie,Cell,Legend,} from "recharts";
+import axios from "axios";
+import React, { useState,useEffect } from "react";
 
 export default function Dashboard() {
-  // Données statiques pour admin
-  const me = {
-    firstName: "Alex",
-    lastName: "Johnson",
-    role: "admin"
-  };
+  const [user, setUser] = useState(null);
+  const [classesByNiveau, setClassesByNiveau] = useState([]);
+  const [loadingClasses, setLoadingClasses] = useState(true);
+
+  const [formateurs,setFormateurs] = useState([]);
+  const [etudiants,setEtudiants] = useState([]);
+  const [classes,setClasses] = useState([]);
+
+  useEffect(()=>{
+    async function getEtudiants(){
+      try {
+      const donneEtudiants = await axios.get("http://127.0.0.1:8000/api/etudiants",{
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem("token")}`
+                }
+            });
+            setEtudiants(donneEtudiants.data)
+          }
+           catch (error) {
+            console.log(error);
+          }
+        }getEtudiants(); 
+  },[])
+
+
+  useEffect(()=>{
+    async function getFormateurs(){
+      try {
+      const donneFormateurs = await axios.get("http://127.0.0.1:8000/api/formateurs",{
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem("token")}`
+                }
+            });
+            setFormateurs(donneFormateurs.data)
+          }
+           catch (error) {
+            console.log(error);
+          }
+        }getFormateurs(); 
+  },[])
+  
+  useEffect(() => {
+    async function getUser() {
+      try {
+        const res = await axios.get("http://127.0.0.1:8000/api/me", {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`
+          }
+        });
+        setUser(res.data);
+      } catch (error) {
+        console.log("Error fetching user:", error);
+      }
+    }
+
+    getUser();
+  }, []);
+
+  useEffect(()=>{
+    async function getClasses(){
+      try {
+      const donneClasses = await axios.get("http://127.0.0.1:8000/api/classes",{
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem("token")}`
+                }
+            });
+            setClasses(donneClasses.data)
+          }
+           catch (error) {
+            console.log(error);
+          }
+        }getClasses(); 
+  },[])
+
+  useEffect(() => {
+    async function fetchData() {
+      setLoadingClasses(true);
+      try {
+        const res = await axios.get(
+          "http://127.0.0.1:8000/api/stats/classes-by-niveau",
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`
+            }
+          }
+        );
+
+        console.log("Classes by niveau data:", res.data);
+        console.log("Data length:", res.data?.length);
+        if (Array.isArray(res.data)) {
+          setClassesByNiveau(res.data);
+        } else {
+          console.warn("Expected array but got:", typeof res.data);
+          setClassesByNiveau([]);
+        }
+      } catch (err) {
+        console.error("Error fetching classes by niveau:", err.response?.data || err.message);
+        setClassesByNiveau([]);
+      } finally {
+        setLoadingClasses(false);
+      }
+    }
+
+    fetchData();
+  }, []);
 
   // Données statiques du dashboard admin
   const data = {
@@ -75,7 +155,7 @@ export default function Dashboard() {
           <div>
             <h1 className="text-3xl font-semibold tracking-tight text-gray-800">Tableau de bord</h1>
             <p className="text-gray-500">
-              Bienvenue, {me.firstName} {me.lastName}
+              Bienvenue, {user?.nom} {user?.prenom}
             </p>
           </div>
 
@@ -90,7 +170,7 @@ export default function Dashboard() {
                 </div>
               </div>
               <div className="p-6 pt-0">
-                <div className="text-2xl font-semibold text-gray-800">{data.totalStudents}</div>
+                <div className="text-2xl font-semibold text-gray-800">{etudiants.length}</div>
               </div>
             </div>
 
@@ -103,7 +183,7 @@ export default function Dashboard() {
                 </div>
               </div>
               <div className="p-6 pt-0">
-                <div className="text-2xl font-semibold text-gray-800">{data.totalTrainers}</div>
+                <div className="text-2xl font-semibold text-gray-800">{formateurs.length}</div>
               </div>
             </div>
 
@@ -116,7 +196,7 @@ export default function Dashboard() {
                 </div>
               </div>
               <div className="p-6 pt-0">
-                <div className="text-2xl font-semibold text-gray-800">{data.totalSections}</div>
+                <div className="text-2xl font-semibold text-gray-800">{classes.length}</div>
               </div>
             </div>
 
@@ -215,28 +295,40 @@ export default function Dashboard() {
 
             {/* Graphique Étudiants par classe */}
             <div className="rounded-lg border bg-white shadow-sm">
-              <div className="p-6 pb-2">
-                <h3 className="text-lg font-semibold text-gray-800">Étudiants par classe</h3>
-                <p className="text-sm text-gray-500">Répartition des effectifs</p>
+              <div className="flex flex-row items-center justify-between p-6 pb-2">
+                <h3 className="text-lg font-semibold text-gray-800">Classes par niveau</h3>
+                <div className="flex h-9 w-9 items-center justify-center rounded-md bg-blue-50">
+                  <BookOpen className="h-5 w-5 text-[#2F5D9F]" />
+                </div>
               </div>
-              <div className="p-6 pt-0">
-                <div className="h-72">
+
+              <div className="p-6 pt-0 h-72">
+                {classesByNiveau && classesByNiveau.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
-                      <Pie data={data.studentsBySection} dataKey="count" nameKey="sectionName"
-                        cx="50%" cy="50%" outerRadius={90} label>
-                        {data.studentsBySection.map((_, i) => (
-                          <Cell key={i} fill={["#6366f1", "#22c55e", "#f59e0b", "#ec4899", "#06b6d4"][i % 5]} />
+                      <Pie data={classesByNiveau.map((item) => {
+                          console.log("Item data:", item);
+                          const niveauName = item.niveau_scolaire?.nom_niveau || item.niveau_scolaire?.name || item.niveau || "Inconnu";
+                          return { name: niveauName, value: parseInt(item.count) || 0, };
+                        })}
+                        cx="50%" cy="50%" labelLine={false} label={({ name, value }) => `${name}: ${value}`} outerRadius={100} fill="#8884d8" dataKey="value" >
+                        {classesByNiveau.map((_, index) => (
+                          <Cell key={`cell-${index}`} fill={['#6366f1', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#06b6d4', '#3b82f6'][index % 7]} />
                         ))}
                       </Pie>
-                      <Tooltip />
+                      <Tooltip formatter={(value) => [value, "Nombre de classes"]} contentStyle={{ backgroundColor: "#fff", border: "1px solid #ccc", borderRadius: "4px" }}/>
                       <Legend />
                     </PieChart>
                   </ResponsiveContainer>
-                </div>
+                ) : (
+                  <div className="flex items-center justify-center h-full text-gray-500">
+                    <p>Chargement des données...</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
+
 
           {/* Derniers paiements et activités */}
           <div className="grid gap-4 lg:grid-cols-2">

@@ -1,29 +1,81 @@
-import React, { useState } from "react";
 import { ArrowLeft, MapPin, Users, Plus, X } from "lucide-react";
+import { useState,useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 export default function AjouterSalle() {
-  const handleRetour = () => {
-    console.log("Retour à la liste");
-    alert("Retour à la liste (simulation)");
-  };
+  const navigate = useNavigate()
 
-  const handleSubmit = (e) => {
+  const [nom_salle,setNomSalle] = useState("");
+  const [type_salle,setTypeSalle] = useState("");
+  const [capacite,setCapacite] = useState("");
+  const [etage,setEtage] = useState("");
+  const [statut,setStatut] = useState("Disponible");
+  const [description,setDescription] = useState("");
+
+  function onchangeNomSalle(e){
+    setNomSalle(e.target.value)
+  }
+  function onchangeTypeSalle(e){
+    setTypeSalle(e.target.value)
+  }
+  function onchangeCapacite(e){
+    setCapacite(Number(e.target.value))
+  }
+  function onchangeEtage(e){
+    setEtage(e.target.value)
+  }
+  function onchangeStatut(e){
+    setStatut(e.target.value)
+  }
+  function onchangeDescription(e){
+    setDescription(e.target.value)
+  }
+
+
+  async function SalleAjouter(e) {
     e.preventDefault();
-    console.log("Salle ajoutée");
-    alert("Salle ajoutée avec succès (simulation)");
-  };
 
-  const handleAnnuler = () => {
-    console.log("Annuler");
-    alert("Annuler (simulation)");
-  };
+    const data = {
+      nom_salle,
+      type_salle,
+      capacite,
+      etage,
+      statut,
+      description,
+    };
+
+    try {
+      const res = await axios.post("http://127.0.0.1:8000/api/salles",data,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      navigate("/ListeSalles");
+    } catch (error) {
+      console.log(error.response?.data?.errors);
+    }
+  }
+
+  function Anuler(){
+    setNomSalle("");
+    setTypeSalle("");
+    setCapacite("");
+    setEtage("");
+    setStatut("Disponible");
+    setDescription("");
+  }
 
   return (
     <div className="flex h-screen bg-gray-50">
       <div className="flex-1 flex flex-col overflow-auto">
         <div className="p-6">
           <div className="flex items-center gap-4 mb-6">
-            <button onClick={handleRetour} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+            <button onClick={()=> navigate("/ListeSalles")} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
               <ArrowLeft size={20} className="text-gray-600" />
             </button>
             <div>
@@ -32,7 +84,7 @@ export default function AjouterSalle() {
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
             <div className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
@@ -40,14 +92,14 @@ export default function AjouterSalle() {
                     <MapPin size={14} className="inline mr-1" />
                     Nom de la salle <span className="text-red-500">*</span>
                   </label>
-                  <input type="text" className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#2F5D9F] focus:ring-2 focus:ring-[#2F5D9F]/100 transition-all" placeholder="Ex: A101, Lab Info 1" />
+                  <input type="text" value={nom_salle} onChange={onchangeNomSalle} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#2F5D9F] focus:ring-2 focus:ring-[#2F5D9F]/100 transition-all" placeholder="Ex: A101, Lab Info 1" />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium mb-2 text-gray-700">
                     Type de salle <span className="text-red-500">*</span>
                   </label>
-                  <select className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#2F5D9F] focus:ring-2 focus:ring-[#2F5D9F]/100 transition-all bg-white">
+                  <select value={type_salle} onChange={onchangeTypeSalle} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#2F5D9F] focus:ring-2 focus:ring-[#2F5D9F]/100 transition-all bg-white">
                     <option value="">Sélectionner un type</option>
                     <option value="Salle standard">Salle standard</option>
                     <option value="Laboratoire">Laboratoire</option>
@@ -62,25 +114,12 @@ export default function AjouterSalle() {
                     <Users size={14} className="inline mr-1" />
                     Capacité <span className="text-red-500">*</span>
                   </label>
-                  <input type="number" className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#2F5D9F] focus:ring-2 focus:ring-[#2F5D9F]/100 transition-all" placeholder="Nombre de places" />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-2 text-gray-700">
-                    Bâtiment <span className="text-red-500">*</span>
-                  </label>
-                  <select className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#2F5D9F] focus:ring-2 focus:ring-[#2F5D9F]/100 transition-all bg-white">
-                    <option value="">Sélectionner un bâtiment</option>
-                    <option value="Bâtiment A">Bâtiment A</option>
-                    <option value="Bâtiment B">Bâtiment B</option>
-                    <option value="Bâtiment C">Bâtiment C</option>
-                    <option value="Bâtiment D">Bâtiment D</option>
-                  </select>
+                  <input type="number" value={capacite} onChange={onchangeCapacite} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#2F5D9F] focus:ring-2 focus:ring-[#2F5D9F]/100 transition-all" placeholder="Nombre de places" />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium mb-2 text-gray-700">Étage</label>
-                  <select className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#2F5D9F] focus:ring-2 focus:ring-[#2F5D9F]/100 transition-all bg-white">
+                  <select value={etage} onChange={onchangeEtage} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#2F5D9F] focus:ring-2 focus:ring-[#2F5D9F]/100 transition-all bg-white">
                     <option value="Rez-de-chaussée">Rez-de-chaussée</option>
                     <option value="1er étage">1er étage</option>
                     <option value="2ème étage">2ème étage</option>
@@ -90,7 +129,7 @@ export default function AjouterSalle() {
 
                 <div>
                   <label className="block text-sm font-medium mb-2 text-gray-700">Statut</label>
-                  <select className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#2F5D9F] focus:ring-2 focus:ring-[#2F5D9F]/100 transition-all bg-white">
+                  <select value={statut} onChange={onchangeStatut} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#2F5D9F] focus:ring-2 focus:ring-[#2F5D9F]/100 transition-all bg-white">
                     <option value="Disponible">Disponible</option>
                     <option value="Occupée">Occupée</option>
                     <option value="En maintenance">En maintenance</option>
@@ -99,31 +138,20 @@ export default function AjouterSalle() {
 
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium mb-2 text-gray-700">Description</label>
-                  <textarea 
-                    rows="3" 
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#2F5D9F] focus:ring-2 focus:ring-[#2F5D9F]/100 transition-all" 
-                    placeholder="Description de la salle..."
-                  />
+                  <textarea value={description} onChange={onchangeDescription} rows="3" className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#2F5D9F] focus:ring-2 focus:ring-[#2F5D9F]/100 transition-all" placeholder="Description de la salle..."/>
                 </div>
               </div>
 
               <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-gray-200">
-                <button 
-                  type="button" 
-                  onClick={handleAnnuler} 
-                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
-                >
+                <button type="button" onClick={Anuler} className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors">
                   Annuler
                 </button>
-                <button 
-                  type="submit" 
-                  className="px-4 py-2 bg-[#E55B2D] text-white rounded-lg font-medium flex items-center gap-2 hover:bg-[#c44d24] transition-colors shadow-sm"
-                >
+                <button onClick={SalleAjouter} className="px-4 py-2 bg-[#E55B2D] text-white rounded-lg font-medium flex items-center gap-2 hover:bg-[#c44d24] transition-colors shadow-sm">
                   Ajouter la salle
                 </button>
               </div>
             </div>
-          </form>
+          </div>
         </div>
       </div>
     </div>

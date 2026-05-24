@@ -1,8 +1,14 @@
 import { Search, Calendar, User, FileText, CheckCircle, XCircle, Filter } from "lucide-react";
-
+import { useState,useEffect } from "react";
 
 export default function Absences() {
-  // Données statiques des absences
+  const [search, setSearch] = useState("");
+  const [date, setDate] = useState("");
+  const [status, setStatus] = useState("")
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const absencesParPage = 15;
+
   const absences = [
     { id: 1, nom: "Sarah Martin", initials: "SM", date: "10/06/2024", status: "nonJustifie", motif: "Absence sans justificatif", justificatif: null },
     { id: 2, nom: "Karim Benali", initials: "KB", date: "10/06/2024", status: "justifie", motif: "Rendez-vous médical", justificatif: "Certificat médical" },
@@ -11,6 +17,18 @@ export default function Absences() {
     { id: 5, nom: "Fatima Zahra", initials: "FZ", date: "12/06/2024", status: "justifie", motif: "Maladie", justificatif: "Arrêt maladie" },
     { id: 6, nom: "Youssef El Amrani", initials: "YE", date: "12/06/2024", status: "nonJustifie", motif: "Absence non justifiée", justificatif: null },
   ];
+
+  const filteredAbsences = absences.filter((a) => {
+    const matchSearch = `${a.nom} ${a.initials}`.toLowerCase().includes(search.toLowerCase());
+    const matchStatus = status ? a.status === status : true;
+    const matchDate = date ? a.date === date : true;
+    return matchSearch && matchStatus && matchDate;
+  });
+
+  const indexDernierAbsence = currentPage * absencesParPage;
+  const indexPremierAbsence = indexDernierAbsence - absencesParPage;
+  const absencesActuels = filteredAbsences.slice(indexPremierAbsence,indexDernierAbsence);
+  const totalPages = Math.ceil(filteredAbsences.length / absencesParPage);
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -32,22 +50,22 @@ export default function Absences() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="relative">
                 <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input type="text" placeholder="Rechercher par nom..." className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#2F5D9F] focus:ring-2 focus:ring-[#2F5D9F]/20 transition-all" />
+                <input type="text" placeholder="Rechercher par nom..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#E55B2D] focus:ring-2 focus:ring-[#E55B2D]/80 transition-all" />
               </div>
               <div className="relative">
                 <Calendar size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input type="date" className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#2F5D9F] focus:ring-2 focus:ring-[#2F5D9F]/20 transition-all" />
+                <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#E55B2D] focus:ring-2 focus:ring-[#E55B2D]/80 transition-all" />
               </div>
               <div className="relative">
                 <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <select className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#2F5D9F] focus:ring-2 focus:ring-[#2F5D9F]/20 transition-all bg-white">
+                <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-[#E55B2D] focus:ring-2 focus:ring-[#E55B2D]/80 transition-all bg-white">
                   <option value="">Tous les statuts</option>
                   <option value="justifie">Justifié</option>
                   <option value="nonJustifie">Non justifié</option>
                 </select>
               </div>
               <div>
-                <button className="w-full px-4 py-2 border border-gray-300 bg-[#E55B2D] rounded-lg text-sm text-white hover:bg-[#c44d24] transition-colors">
+                <button onClick={() => {setSearch("");setDate("");setStatus("");}} className="w-full px-4 py-2 border border-gray-300 bg-[#E55B2D] rounded-lg text-sm text-white hover:bg-[#c44d24] transition-colors">
                   Réinitialiser
                 </button>
               </div>
@@ -71,7 +89,7 @@ export default function Absences() {
                     </tr>
                   </thead>
                   <tbody>
-                    {absences.map((absence, index) => (
+                    {absencesActuels.map((absence, index) => (
                       <tr key={absence.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                         <td className="px-6 py-4 text-sm text-gray-700 whitespace-nowrap">{index + 1}</td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -122,18 +140,25 @@ export default function Absences() {
 
             {/* Footer avec pagination */}
             <div className="px-6 py-4 border-t border-gray-200 flex justify-between items-center flex-wrap gap-4">
-              <p className="text-sm text-gray-500 whitespace-nowrap">Total: {absences.length} absences</p>
+              <p className="text-sm text-gray-500 whitespace-nowrap">
+                Total: {absences.length} absences
+              </p>
               <div className="flex gap-2 flex-wrap">
-                <button className="px-3 py-1 border border-gray-300 rounded text-sm text-gray-600 hover:bg-gray-50 transition-colors whitespace-nowrap">
+                <button onClick={() => setCurrentPage(currentPage - 1)} disabled={currentPage === 1} className="px-3 py-1 border border-gray-300 rounded text-sm text-gray-600 disabled:opacity-50">
                   Précédent
                 </button>
-                <button className="px-3 py-1 bg-[#2F5D9F] text-white rounded text-sm hover:bg-[#1e3d6b] transition-colors whitespace-nowrap">
-                  1
-                </button>
-                <button className="px-3 py-1 border border-gray-300 rounded text-sm text-gray-600 hover:bg-gray-50 transition-colors whitespace-nowrap">
-                  2
-                </button>
-                <button className="px-3 py-1 border border-gray-300 rounded text-sm text-gray-600 hover:bg-gray-50 transition-colors whitespace-nowrap">
+                {[...Array(totalPages)].map((_, index) => (
+                  <button key={index} onClick={() => setCurrentPage(index + 1)}
+                    className={`px-3 py-1 rounded text-sm ${
+                      currentPage === index + 1
+                        ? "bg-[#2F5D9F] text-white"
+                        : "border border-gray-300 text-gray-600"
+                    }`}
+                  >
+                    {index + 1}
+                  </button>
+                ))}
+                <button onClick={() => setCurrentPage(currentPage + 1)} disabled={currentPage === totalPages} className="px-3 py-1 border border-gray-300 rounded text-sm text-gray-600 disabled:opacity-50">
                   Suivant
                 </button>
               </div>

@@ -1,31 +1,40 @@
 import React from "react";
-import { ArrowLeft, User, Mail, Phone, MapPin, BookOpen, Calendar, Info, CheckCircle, XCircle } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { ArrowLeft, User, Mail, GraduationCap, Bus, Phone, School, MapPin, BookOpen, Calendar, Info, CheckCircle, XCircle } from "lucide-react";
+import { useNavigate,useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import axios from "axios";
 
 export default function DetailsEtudiant() {
   const navigate = useNavigate();
-  // Données statiques pour l'étudiant
-  const etudiant = {
-    id: 1,
-    name: "Sarah Martin",
-    email: "sarah.martin@amity.com",
-    phone: "+212 6XX XXX XXX",
-    address: "Casablanca, Maroc",
-    class: "2ème Année",
-    status: "Actif",
-    bio: "Étudiante passionnée par le développement web et les nouvelles technologies. Toujours motivée et participative en classe.",
-    createdAt: "2024-01-15",
-    updatedAt: "2024-03-20",
-    photoUrl: null
-  };
+  
+  const [etudiants, setEtudiants] = useState(null);
+  const { id } = useParams();
+  useEffect(() => {
+    async function getOne() {
+      try {
+        const res = await axios.get(`http://127.0.0.1:8000/api/etudiants/${id}`,{
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+        setEtudiants(res.data);
+        console.log(res.data);
+      } catch (error) {
+        console.log(error);
+      }
+    }
+    getOne();
+  }, [id]);
+
+    if (!etudiants) return <div>Loading...</div>;
 
   const handleRetour = () => {
     navigate("/ListeEtudiants")
-    console.log("Retour à la liste");
   };
 
   const getInitials = () => {
-    return `${etudiant.name.split(' ')[0]?.[0] || ''}${etudiant.name.split(' ')[1]?.[0] || ''}`.toUpperCase();
+    return `${etudiants.nom?.split(' ')[0]?.[0] || ''}${etudiants.nom?.split(' ')[1]?.[0] || ''}`.toUpperCase();
   };
 
   return (
@@ -50,16 +59,16 @@ export default function DetailsEtudiant() {
                 {getInitials()}
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-gray-800">{etudiant.name}</h2>
+                <h2 className="text-2xl font-bold text-gray-800">{etudiants.nom} {etudiants.prenom}</h2>
                 <div className="flex items-center gap-3 mt-2">
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    etudiant.status === "Actif" 
+                    etudiants.status === "actif" 
                       ? "bg-green-100 text-green-700" 
                       : "bg-red-100 text-red-700"
                   }`}>
-                    {etudiant.status === "Actif" ? "Actif" : "Inactif"}
+                    {etudiants.status === "actif" ? "actif" : "inactif"}
                   </span>
-                  <span className="text-sm text-gray-500">ID: {etudiant.id}</span>
+                  <span className="text-sm text-gray-500">ID: {etudiants.id}</span>
                 </div>
               </div>
             </div>
@@ -80,28 +89,42 @@ export default function DetailsEtudiant() {
                     <User size={16} className="text-gray-400 mt-0.5" />
                     <div>
                       <p className="text-xs text-gray-500">Nom complet</p>
-                      <p className="text-sm font-medium text-gray-800">{etudiant.name}</p>
+                      <p className="text-sm font-medium text-gray-800">{etudiants.nom} {etudiants.prenom}</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
                     <Mail size={16} className="text-gray-400 mt-0.5" />
                     <div>
                       <p className="text-xs text-gray-500">Email</p>
-                      <p className="text-sm font-medium text-gray-800">{etudiant.email}</p>
+                      <p className="text-sm font-medium text-gray-800">{etudiants.email}</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
                     <Phone size={16} className="text-gray-400 mt-0.5" />
                     <div>
                       <p className="text-xs text-gray-500">Téléphone</p>
-                      <p className="text-sm font-medium text-gray-800">{etudiant.phone}</p>
+                      <p className="text-sm font-medium text-gray-800">{etudiants.phone}</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
                     <MapPin size={16} className="text-gray-400 mt-0.5" />
                     <div>
                       <p className="text-xs text-gray-500">Adresse</p>
-                      <p className="text-sm font-medium text-gray-800">{etudiant.address}</p>
+                      <p className="text-sm font-medium text-gray-800">{etudiants.adresse}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <User size={16} className="text-gray-400 mt-0.5" />
+                    <div>
+                      <p className="text-xs text-gray-500">Genre</p>
+                      <p className="text-sm font-medium text-gray-800">{etudiants.genre}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <Calendar size={16} className="text-gray-400 mt-0.5" />
+                    <div>
+                      <p className="text-xs text-gray-500">Date Naissance</p>
+                      <p className="text-sm font-medium text-gray-800">{etudiants.date_naissance}</p>
                     </div>
                   </div>
                 </div>
@@ -115,22 +138,43 @@ export default function DetailsEtudiant() {
                 </h3>
                 <div className="space-y-3">
                   <div className="flex items-start gap-3">
-                    <BookOpen size={16} className="text-gray-400 mt-0.5" />
+                    <School size={16} className="text-gray-400 mt-0.5" />
                     <div>
                       <p className="text-xs text-gray-500">Classe</p>
-                      <p className="text-sm font-medium text-gray-800">{etudiant.class}</p>
+                      <p className="text-sm font-medium text-gray-800">{etudiants.classe?.nom_classe}</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
-                    {etudiant.status === "Actif" ? (
+                    <GraduationCap size={16} className="text-gray-400 mt-0.5" />
+                    <div>
+                      <p className="text-xs text-gray-500">Filiere</p>
+                      <p className="text-sm font-medium text-gray-800">{etudiants.filiere?.nom_filiere}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <BookOpen size={16} className="text-gray-400 mt-0.5" />
+                    <div>
+                      <p className="text-xs text-gray-500">Niveau Scolaire</p>
+                      <p className="text-sm font-medium text-gray-800">{etudiants.niveau_scolaire?.nom_niveau}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <Bus size={16} className="text-gray-400 mt-0.5" />
+                    <div>
+                      <p className="text-xs text-gray-500">Transport</p>
+                      <p className="text-sm font-medium text-gray-800">{etudiants.transport?.nom_transport}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    {etudiants.status === "actif" ? (
                       <CheckCircle size={16} className="text-green-500 mt-0.5" />
                     ) : (
                       <XCircle size={16} className="text-red-500 mt-0.5" />
                     )}
                     <div>
                       <p className="text-xs text-gray-500">Statut</p>
-                      <p className={`text-sm font-medium ${etudiant.status === "Actif" ? "text-green-700" : "text-red-700"}`}>
-                        {etudiant.status}
+                      <p className={`text-sm font-medium ${etudiants.status === "actif" ? "text-green-700" : "text-red-700"}`}>
+                        {etudiants.status}
                       </p>
                     </div>
                   </div>
@@ -140,15 +184,6 @@ export default function DetailsEtudiant() {
 
             {/* Colonne droite */}
             <div className="space-y-6">
-              {/* Biographie */}
-              <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                  <Info size={20} className="text-[#2F5D9F]" />
-                  Biographie
-                </h3>
-                <p className="text-sm text-gray-700 leading-relaxed">{etudiant.bio}</p>
-              </div>
-
               {/* Dates importantes */}
               <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
@@ -160,14 +195,14 @@ export default function DetailsEtudiant() {
                     <Calendar size={16} className="text-gray-400 mt-0.5" />
                     <div>
                       <p className="text-xs text-gray-500">Date d'inscription</p>
-                      <p className="text-sm font-medium text-gray-800">{etudiant.createdAt}</p>
+                      <p className="text-sm font-medium text-gray-800">{etudiants.date_inscription}</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
                     <Calendar size={16} className="text-gray-400 mt-0.5" />
                     <div>
                       <p className="text-xs text-gray-500">Dernière modification</p>
-                      <p className="text-sm font-medium text-gray-800">{etudiant.updatedAt}</p>
+                      <p className="text-sm font-medium text-gray-800">{new Date(etudiants.updated_at).toLocaleString()}</p>
                     </div>
                   </div>
                 </div>
@@ -177,7 +212,7 @@ export default function DetailsEtudiant() {
               <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4">Actions</h3>
                 <div className="flex gap-3">
-                  <button onClick={()=>navigate("/ModifierEtudiant")} className="flex-1 px-4 py-2 bg-[#2F5D9F] text-white rounded-lg font-medium hover:bg-[#1e3d6b] transition-colors">
+                  <button onClick={()=>navigate("/ModifierEtudiants")} className="flex-1 px-4 py-2 bg-[#2F5D9F] text-white rounded-lg font-medium hover:bg-[#1e3d6b] transition-colors">
                     Modifier
                   </button>
                   <button onClick={()=>navigate("/ListeEtudiants")} className="flex-1 px-4 py-2 border border-red-500 text-red-500 rounded-lg font-medium hover:bg-red-50 transition-colors">

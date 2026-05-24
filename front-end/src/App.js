@@ -48,29 +48,30 @@ function App() {
 
         <Route path="/ListeEtudiants" element={<ListeEtudiants />} />
         <Route path="/AjouterEtudiant" element={<AjouterEtudiant />} />
-        <Route path="/ModifierEtudiant" element={<ModifierEtudiant />} />
-        <Route path="/DetailsEtudiant" element={<DetailsEtudiant />} />
+        <Route path="/ModifierEtudiant/:id" element={<ModifierEtudiant />} />
+        <Route path="/DetailsEtudiant/:id" element={<DetailsEtudiant />} />
 
         <Route path="/ListeFormateurs" element={<ListeFormateurs />} />
         <Route path="/AjouterFormateur" element={<AjouterFormateur />} />
-        <Route path="/ModifierFormateur" element={<ModifierFormateur />} />
-        <Route path="/DetailsFormateur" element={<DetailsFormateur />} />
+        <Route path="/ModifierFormateur/:id" element={<ModifierFormateur />} />
+        <Route path="/DetailsFormateur/:id" element={<DetailsFormateur />} />
 
         <Route path="/ListeClasses" element={<ListeClasses />} />
         <Route path="/AjouterClasse" element={<AjouterClasse />} />
-        <Route path="/ModifierClasse" element={<ModifierClasse />} />
-        <Route path="/DetailsClasse" element={<DetailsClasse />} />
+        <Route path="/ModifierClasse/:id" element={<ModifierClasse />} />
+        <Route path="/DetailsClasse/:id" element={<DetailsClasse />} />
 
         <Route path="/ListeSalles" element={<ListeSalles />} />
         <Route path="/AjouterSalle" element={<AjouterSalle />} />
-        <Route path="/ModifierSalle" element={<ModifierSalle />} />
-        <Route path="/DetailsSalle" element={<DetailsSalle />} />
+        <Route path="/ModifierSalle/:id" element={<ModifierSalle />} />
+        <Route path="/DetailsSalle/:id" element={<DetailsSalle />} />
 
         <Route path="/ListeFiliere" element={<ListeFiliere />} />
         <Route path="/AjouterFiliere" element={<AjouterFiliere />} />
-        <Route path="/ModifierFiliere" element={<ModifierFiliere />} />
+        <Route path="/ModifierFiliere/:id" element={<ModifierFiliere />} />
       </Route>
     </Routes>
+    {/* <DetailsFormateur/> */}
     </div>
   );
 }

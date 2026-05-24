@@ -37,6 +37,34 @@ export function Sidebar() {
       navigate("/ListeFiliere")
     }
 
+   const isFormateurRoute =
+      location.pathname.startsWith("/ListeFormateurs") ||
+      location.pathname.startsWith("/AjouterFormateur") ||
+      location.pathname.startsWith("/ModifierFormateur") ||
+      location.pathname.startsWith("/DetailsFormateur");
+
+   const isEtudiantRoute =
+      location.pathname.startsWith("/ListeEtudiants") ||
+      location.pathname.startsWith("/AjouterEtudiant") ||
+      location.pathname.startsWith("/ModifierEtudiant") ||
+      location.pathname.startsWith("/DetailsEtudiant");
+   
+   const isClassesRoute =
+      location.pathname.startsWith("/ListeClasses") ||
+      location.pathname.startsWith("/DetailsClasse") ||
+      location.pathname.startsWith("/AjouterClasse") ||
+      location.pathname.startsWith("/ModifierClasse");
+
+   const isSallesRoute =
+      location.pathname.startsWith("/ListeSalles") ||
+      location.pathname.startsWith("/AjouterSalle") ||
+      location.pathname.startsWith("/ModifierSalle") ||
+      location.pathname.startsWith("/DetailsSalle");
+   
+   const isFiliereRoute =
+      location.pathname.startsWith("/ListeFiliere") ||
+      location.pathname.startsWith("/AjouterFiliere") ||
+      location.pathname.startsWith("/ModifierFiliere");
 
     return (
         <div className="w-64 flex flex-col h-full bg-white border-r shadow-sm">
@@ -73,8 +101,12 @@ export function Sidebar() {
             {/* Étudiants */}
             <p onClick={Aetudiants} 
                className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium w-full cursor-pointer transition-all duration-300 border-l-4
-                ${!["/ListeEtudiants", "/AjouterEtudiant", "/ModifierEtudiant","/DetailsEtudiant"].includes(location.pathname) ? "hover:translate-x-1 hover:shadow-md hover:text-[#2F5D9F] hover:bg-orange-50 hover:border-l-[#E55B2D]" : ""} 
-                ${["/ListeEtudiants", "/AjouterEtudiant", "/ModifierEtudiant","/DetailsEtudiant"].includes(location.pathname) ? "bg-[#E55B2D] text-white border-l-[#E55B2D]" : "border-l-transparent text-[#2F5D9F]"}`}>
+                  ${!isEtudiantRoute
+                  ? "hover:translate-x-1 hover:shadow-md hover:text-[#2F5D9F] hover:bg-orange-50 hover:border-l-[#E55B2D]"
+                  : ""} 
+                ${isEtudiantRoute
+                  ? "bg-[#E55B2D] text-white border-l-[#E55B2D]"
+                  : "border-l-transparent text-[#2F5D9F]"}`}>
                <Users className="w-5 h-5" />
                Étudiants
             </p>
@@ -82,8 +114,12 @@ export function Sidebar() {
             {/* Formateurs */}
             <p onClick={Aformateurs} 
                className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium w-full cursor-pointer transition-all duration-300 border-l-4
-                ${!["/ListeFormateurs", "/AjouterFormateur", "/ModifierFormateur","/DetailsFormateur"].includes(location.pathname) ? "hover:translate-x-1 hover:shadow-md hover:text-[#2F5D9F] hover:bg-orange-50 hover:border-l-[#E55B2D]" : ""} 
-                ${["/ListeFormateurs", "/AjouterFormateur", "/ModifierFormateur","/DetailsFormateur"].includes(location.pathname) ? "bg-[#E55B2D] text-white border-l-[#E55B2D]" : "border-l-transparent text-[#2F5D9F]"}`}>
+                ${!isFormateurRoute
+                  ? "hover:translate-x-1 hover:shadow-md hover:text-[#2F5D9F] hover:bg-orange-50 hover:border-l-[#E55B2D]"
+                  : ""} 
+                ${isFormateurRoute
+                  ? "bg-[#E55B2D] text-white border-l-[#E55B2D]"
+                  : "border-l-transparent text-[#2F5D9F]"}`}>
                <GraduationCap className="w-5 h-5" />
                Formateurs
             </p>
@@ -91,8 +127,12 @@ export function Sidebar() {
             {/* Classes */}
             <p onClick={Aclasses} 
                className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium w-full cursor-pointer transition-all duration-300 border-l-4
-                ${!["/ListeClasses", "/AjouterClasse", "/ModifierClasse","/DetailsClasse"].includes(location.pathname) ? "hover:translate-x-1 hover:shadow-md hover:text-[#2F5D9F] hover:bg-orange-50 hover:border-l-[#E55B2D]" : ""} 
-                ${["/ListeClasses", "/AjouterClasse", "/ModifierClasse","/DetailsClasse"].includes(location.pathname) ? "bg-[#E55B2D] text-white border-l-[#E55B2D]" : "border-l-transparent text-[#2F5D9F]"}`}>
+                ${!isClassesRoute
+                  ? "hover:translate-x-1 hover:shadow-md hover:text-[#2F5D9F] hover:bg-orange-50 hover:border-l-[#E55B2D]"
+                  : ""} 
+                ${isClassesRoute
+                  ? "bg-[#E55B2D] text-white border-l-[#E55B2D]"
+                  : "border-l-transparent text-[#2F5D9F]"}`}>
                <BookOpen className="w-5 h-5" />
                Classes
             </p>
@@ -100,8 +140,12 @@ export function Sidebar() {
             {/* Salles */}
             <p onClick={Asalles} 
                className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium w-full cursor-pointer transition-all duration-300 border-l-4
-                ${!["/ListeSalles", "/AjouterSalle", "/ModifierSalle","/DetailsSalle"].includes(location.pathname) ? "hover:translate-x-1 hover:shadow-md hover:text-[#2F5D9F] hover:bg-orange-50 hover:border-l-[#E55B2D]" : ""} 
-                ${["/ListeSalles", "/AjouterSalle", "/ModifierSalle","/DetailsSalle"].includes(location.pathname) ? "bg-[#E55B2D] text-white border-l-[#E55B2D]" : "border-l-transparent text-[#2F5D9F]"}`}>
+                ${!isSallesRoute
+                  ? "hover:translate-x-1 hover:shadow-md hover:text-[#2F5D9F] hover:bg-orange-50 hover:border-l-[#E55B2D]"
+                  : ""} 
+                ${isSallesRoute
+                  ? "bg-[#E55B2D] text-white border-l-[#E55B2D]"
+                  : "border-l-transparent text-[#2F5D9F]"}`}>
                <MapPin className="w-5 h-5" />
                Salles
             </p>
@@ -109,8 +153,12 @@ export function Sidebar() {
             {/* filières */}
             <p onClick={Afiliere}
                className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium w-full cursor-pointer transition-all duration-300 border-l-4
-                ${!["/ListeFiliere", "/AjouterFiliere", "/ModifierFiliere"].includes(location.pathname) ? "hover:translate-x-1 hover:shadow-md hover:text-[#2F5D9F] hover:bg-orange-50 hover:border-l-[#E55B2D]" : ""} 
-                ${["/ListeFiliere", "/AjouterFiliere", "/ModifierFiliere"].includes(location.pathname) ? "bg-[#E55B2D] text-white border-l-[#E55B2D]" : "border-l-transparent text-[#2F5D9F]"}`}>
+                ${!isFiliereRoute
+                  ? "hover:translate-x-1 hover:shadow-md hover:text-[#2F5D9F] hover:bg-orange-50 hover:border-l-[#E55B2D]"
+                  : ""} 
+                ${isFiliereRoute
+                  ? "bg-[#E55B2D] text-white border-l-[#E55B2D]"
+                  : "border-l-transparent text-[#2F5D9F]"}`}>
                <GraduationCap className="w-5 h-5" />
                Filières
             </p>

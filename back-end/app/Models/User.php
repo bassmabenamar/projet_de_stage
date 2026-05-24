@@ -3,47 +3,90 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
+use Tymon\JWTAuth\Contracts\JWTSubject;
+use App\Models\Classe;
+use App\Models\Transport;
+use App\Models\Filiere;
+use App\Models\NiveauScolaire;
 
-class User extends Authenticatable
+class User extends Authenticatable implements JWTSubject
 {
-    /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
     protected $fillable = [
-        'name',
+        'nom',
+        'prenom',
         'email',
         'password',
+        'role',
+        'phone',
+        'adresse',
+        'genre',
+        'status',
+        'profile_image',
+        'biographie',
+
+        // Etudiant
+        'classe_id',
+        'transport_id',
+        'filiere_id',
+        'niveau_scolaire_id',
+        'date_naissance',
+        'date_inscription',
+
+
+        // Formateur
+        'specialite',
+        'salaire',
+        'date_embauche',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-    protected function casts(): array
+     protected $casts = [
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',
+    ];
+
+    
+    public function getJWTIdentifier()
     {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
+        return $this->getKey();
+    }
+
+    public function getJWTCustomClaims()
+    {
+        return [];
+    }
+
+    public function classe()
+    {
+        return $this->belongsTo(Classe::class, 'classe_id');
+    }
+
+    public function transport()
+    {
+        return $this->belongsTo(Transport::class, 'transport_id');
+    }
+
+    public function filiere()
+    {
+        return $this->belongsTo(Filiere::class, 'filiere_id');
+    }
+
+    public function niveauScolaire()
+    {
+        return $this->belongsTo(NiveauScolaire::class, 'niveau_scolaire_id');
+    }
+    public function classesFormateur()
+    {
+        return $this->belongsToMany(Classe::class, 'class_formateur', 'formateur_id', 'classe_id');
     }
 }
