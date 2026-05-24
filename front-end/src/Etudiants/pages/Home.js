@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   Play, 
@@ -6,13 +7,23 @@ import {
   ShieldCheck, 
   Zap, 
   Layout, 
-  BookOpen
+  BookOpen,
+  MapPin,
+  Phone,
+  Mail
 } from 'lucide-react';
+import Navbar from './Navbar';
+import Footer from './Footer';
 
 const Home = () => {
+  const navigate = useNavigate();
+
   return (
     <div className="selection:bg-[#F48120] selection:text-white">
       
+      {/* Navbar */}
+      <Navbar />
+
       {/* --- HERO SECTION --- */}
       <section className="relative h-screen flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 z-0">
@@ -34,17 +45,31 @@ const Home = () => {
           animate={{ opacity: 1, y: 0 }} 
           className="relative z-20 text-center px-6 max-w-5xl"
         >
+         
+
           <h1 className="text-4xl md:text-7xl font-black text-white tracking-tight mb-8 drop-shadow-lg">
             L'Éducation Connectée vers l'Avenir
           </h1>
-          <p className="text-white text-lg md:text-xl font-medium mb-12 opacity-95 leading-relaxed max-w-3xl mx-auto drop-shadow-md">
+          <p className="text-white text-lg md:text-xl font-medium mb-6 opacity-95 leading-relaxed max-w-3xl mx-auto drop-shadow-md">
             Former la prochaine génération de leaders grâce à une intégration numérique innovante et un engagement envers l'excellence académique au sein d'une communauté mondiale.
           </p>
+
+          {/* Address pill */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5 }}
+            className="flex items-center justify-center gap-2 text-white/80 text-sm mb-10"
+          >
+            <MapPin size={14} className="text-[#F48120]" />
+            <span>03, rue Ibn Achir, quartier Nzaha Souryenne, Tanger</span>
+          </motion.div>
           
           <div className="flex flex-col md:flex-row gap-5 justify-center">
             <motion.button 
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
+              onClick={() => navigate('/programmes')}
               className="px-12 py-4 bg-[#002366] text-white rounded-md font-bold text-sm uppercase tracking-widest hover:bg-[#001a4d] transition-all"
             >
               Explorer les Programmes
@@ -52,6 +77,7 @@ const Home = () => {
             <motion.button 
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
+              onClick={() => navigate('/virtual-tour')}
               className="px-10 py-4 bg-white text-[#002366] border-2 border-white rounded-md font-bold text-sm uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-transparent hover:text-white transition-all"
             >
               <Play size={16} fill="currentColor" /> Visite Virtuelle
@@ -59,6 +85,7 @@ const Home = () => {
           </div>
         </motion.div>
       </section>
+
 
       {/* --- MISSION (ABOUT SECTION) --- */}
       <section id="about-section" className="py-32 px-6 md:px-20 max-w-7xl mx-auto grid md:grid-cols-2 gap-24 items-center scroll-mt-24">
@@ -70,7 +97,7 @@ const Home = () => {
         >
           <img 
             src="https://img.freepik.com/free-vector/happy-students-group-standing-together-holding-books-illustration_1150-39164.jpg" 
-            alt="Étudiants" 
+            alt="Étudiants Amity" 
             className="w-full h-auto group-hover:scale-105 transition-transform duration-1000"
           />
           <div className="mt-8 text-center">
@@ -87,10 +114,23 @@ const Home = () => {
           <span className="text-[12px] font-black text-[#F48120] uppercase tracking-[0.5em]">Notre Mission</span>
           <h2 className="text-5xl font-black text-[#002366] leading-[1.1]">Excellence Académique et Valeurs Modernes</h2>
           <div className="space-y-6 text-slate-500 text-md leading-relaxed font-medium">
-            <p>À Amity School, nous croyons que l'éducation est le fondement d'un avenir radieux. Notre mission est de fournir un environnement d'apprentissage holistique qui favorise la pensée critique, la créativité et la responsabilité sociale.</p>
-            <p>En intégrant des outils numériques de pointe aux forces pédagogiques traditionnelles, nous préparons nos étudiants aux défis du 21ème siècle.</p>
+            <p>À Amity International School, nous croyons que l'éducation est le fondement d'un avenir radieux. Notre mission est de fournir un environnement d'apprentissage holistique qui favorise la pensée critique, la créativité et la responsabilité sociale.</p>
+            <p>En intégrant des outils numériques de pointe aux forces pédagogiques traditionnelles, nous préparons nos étudiants aux défis du 21ème siècle — depuis notre campus à Tanger, vers le monde entier.</p>
           </div>
-          <button className="flex items-center gap-3 text-[#002366] font-black text-xs uppercase tracking-widest hover:text-[#F48120] transition-all group">
+
+          {/* Inscriptions badge */}
+          <div className="inline-flex items-center gap-3 bg-[#F48120]/10 border border-[#F48120]/20 rounded-2xl px-6 py-4">
+            <div className="w-3 h-3 bg-[#F48120] rounded-full animate-pulse"></div>
+            <div>
+              <p className="text-[10px] font-black text-[#F48120] uppercase tracking-widest">Inscriptions Ouvertes</p>
+              <p className="text-[#002366] font-black text-sm">Session 2026 / 2027</p>
+            </div>
+          </div>
+
+          <button 
+            onClick={() => navigate('/about')}
+            className="flex items-center gap-3 text-[#002366] font-black text-xs uppercase tracking-widest hover:text-[#F48120] transition-all group"
+          >
             En savoir plus sur notre héritage <ArrowRight size={16} className="group-hover:translate-x-3 transition-transform" />
           </button>
         </motion.div>
@@ -170,17 +210,38 @@ const Home = () => {
           className="max-w-7xl mx-auto bg-[#001a4d] rounded-[60px] p-16 md:p-32 text-center text-white relative overflow-hidden shadow-2xl"
         >
           <div className="relative z-10 space-y-8">
+            <div className="inline-block bg-[#F48120] text-white text-[10px] font-black uppercase tracking-[0.3em] px-6 py-2 rounded-full mb-4">
+              Inscriptions Ouvertes 2026/2027
+            </div>
             <h2 className="text-4xl md:text-7xl font-black tracking-tight leading-none">Prêt à rejoindre la<br/>Communauté Amity ?</h2>
-            <p className="text-blue-200/70 max-w-2xl mx-auto text-lg font-medium leading-relaxed">Les inscriptions pour la session 2024-2025 sont maintenant ouvertes. Commencez votre voyage vers l'excellence dès aujourd'hui.</p>
-            <div className="flex flex-col md:flex-row gap-6 justify-center pt-8">
+            <p className="text-blue-200/70 max-w-2xl mx-auto text-lg font-medium leading-relaxed">Les inscriptions pour la session 2026-2027 sont maintenant ouvertes. Commencez votre voyage vers l'excellence dès aujourd'hui.</p>
+            
+            {/* Contact info */}
+            <div className="flex flex-col md:flex-row items-center justify-center gap-6 text-sm text-blue-200/60 pt-2">
+              <a href="tel:+212539944481" className="flex items-center gap-2 hover:text-[#F48120] transition-colors">
+                <Phone size={14} /> +212 539 94 44 81
+              </a>
+              <span className="hidden md:block opacity-30">|</span>
+              <a href="tel:+212665482725" className="flex items-center gap-2 hover:text-[#F48120] transition-colors">
+                <Phone size={14} /> +212 665 48 27 25
+              </a>
+              <span className="hidden md:block opacity-30">|</span>
+              <a href="mailto:Amityschool2024@gmail.com" className="flex items-center gap-2 hover:text-[#F48120] transition-colors">
+                <Mail size={14} /> Amityschool2024@gmail.com
+              </a>
+            </div>
+
+            <div className="flex flex-col md:flex-row gap-6 justify-center pt-4">
               <motion.button 
                 whileHover={{ scale: 1.1, backgroundColor: "#e67300" }}
+                onClick={() => navigate('/login')}
                 className="px-12 py-5 bg-[#F48120] text-white rounded-full font-black uppercase text-xs tracking-[0.2em] shadow-xl shadow-orange-500/20"
               >
                 S'inscrire Maintenant
               </motion.button>
               <motion.button 
                 whileHover={{ scale: 1.1, backgroundColor: "rgba(255,255,255,0.1)" }}
+                onClick={() => navigate('/contact1')}
                 className="px-12 py-5 border-2 border-white/20 text-white rounded-full font-black uppercase text-xs tracking-[0.2em] transition-all"
               >
                 Contacter l'Admission
@@ -191,6 +252,8 @@ const Home = () => {
         </motion.div>
       </section>
 
+      {/* Footer */}
+      <Footer />
     </div>
   );
 };

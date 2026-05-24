@@ -18,7 +18,7 @@ const Navbar = () => {
              />
           </div>
           <div className="flex flex-col justify-center">
-            <span className="text-[#002366] font-black text-xl tracking-tight uppercase leading-none">Amity School</span>
+            <span className="text-[#002366] font-black text-xl tracking-tight uppercase leading-none">Amity International school</span>
             <span className="text-[#F48120] text-[10px] font-bold tracking-[0.2em] uppercase">Tanger, Maroc</span>
           </div>
         </Link>
@@ -31,12 +31,12 @@ const Navbar = () => {
         <Link to="/about" className="hover:text-[#F48120] transition-colors duration-300">À Propos</Link>
         
         <Link to="/academique" className="hover:text-[#F48120] transition-colors duration-300">Académique</Link>
-        <Link to="/admission" className="hover:text-[#F48120] transition-colors duration-300">Admission</Link>
+        <Link to="/contact1" className="hover:text-[#F48120] transition-colors duration-300">Contact </Link>
       </div>
 
       <div className="flex gap-4">
-        <Link to="/login" className="px-6 py-2 text-[11px] font-black uppercase text-[#002366] border border-slate-200 rounded-md hover:bg-slate-50 transition-all text-center">Connexion</Link>
-        <Link to="/register" className="px-6 py-2 text-[11px] font-black uppercase bg-[#F48120] text-white rounded-md shadow-md hover:bg-orange-600 transition-all text-center">S'inscrire</Link>
+        <Link to="/login" className="px-6 py-2 text-[11px] font-black uppercase bg-[#F48120] text-white rounded-md shadow-md hover:bg-orange-600 transition-all text-center">Connexion</Link>
+        
       </div>
     </nav>
   );

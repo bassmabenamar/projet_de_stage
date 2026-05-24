@@ -1,259 +1,459 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Edit3, Send, Plus, Smile, Video, Phone, 
-  MoreHorizontal, FileText, Image as ImageIcon, ArrowLeft 
-} from 'lucide-react';
-import Navbar from './Navbar'; 
+import React, { useState, useEffect, useRef } from 'react';
+import { MessageSquare, Plus, Send, Search, Users, UserCheck, Menu, X, MoreVertical, Edit2, Trash2, Check, XCircle } from "lucide-react";
+import { useNavigate } from 'react-router-dom';
+import Navbar from './Navbar';
+import api from './api';
 
-const springTransition = { type: "spring", stiffness: 300, damping: 24 };
+export default function Messages() {
+  const navigate = useNavigate();
+  const [conversations, setConversations] = useState([]);
+  const [selectedConversation, setSelectedConversation] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState('all');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [editingMessage, setEditingMessage] = useState(null);
+  const [editText, setEditText] = useState('');
+  const [deletingId, setDeletingId] = useState(null);
+  const messagesEndRef = useRef(null);
+  const wsRef = useRef(null);
 
-const containerVars = {
-  hidden: { opacity: 0 },
-  visible: { 
-    opacity: 1, 
-    transition: { staggerChildren: 0.1, delayChildren: 0.2 } 
-  }
-};
+  // Scroll automatique vers le dernier message
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
-const itemVars = {
-  hidden: { y: 20, opacity: 0, scale: 0.98 },
-  visible: { 
-    y: 0, 
-    opacity: 1, 
-    scale: 1,
-    transition: springTransition
-  }
-};
+  // Charger les conversations
+  useEffect(() => {
+    fetchConversations();
+    
+    const token = localStorage.getItem('token');
+    if (token) {
+      wsRef.current = new WebSocket(`ws://127.0.0.1:6001?token=${token}`);
+      
+      wsRef.current.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        if (data.type === 'new_message' && data.conversation_id === selectedConversation?.id) {
+          setMessages(prev => [...prev, data.message]);
+        } else if (data.type === 'message_updated' && data.conversation_id === selectedConversation?.id) {
+          setMessages(prev => prev.map(m => m.id === data.message.id ? data.message : m));
+        } else if (data.type === 'message_deleted' && data.conversation_id === selectedConversation?.id) {
+          setMessages(prev => prev.filter(m => m.id !== data.message_id));
+        } else if (data.type === 'new_conversation') {
+          fetchConversations();
+        }
+      };
+    }
+    
+    return () => {
+      if (wsRef.current) wsRef.current.close();
+    };
+  }, []);
 
-const Messages = () => {
-  const [activeChat, setActiveChat] = useState(0);
-  const [showChatArea, setShowChatArea] = useState(false);
+  // Charger les messages quand une conversation est sélectionnée
+  useEffect(() => {
+    if (selectedConversation) {
+      fetchMessages(selectedConversation.id);
+    }
+  }, [selectedConversation]);
 
-  const handleSelectChat = (id) => {
-    setActiveChat(id);
-    setShowChatArea(true);
+  const fetchConversations = async () => {
+    try {
+      const response = await api.get('/student/conversations');
+      setConversations(response.data?.data || []);
+      if (response.data?.data?.length > 0 && !selectedConversation) {
+        setSelectedConversation(response.data.data[0]);
+      }
+      setLoading(false);
+    } catch (error) {
+      console.error("Erreur chargement conversations:", error);
+      setConversations([
+        { id: 1, name: 'Sarah Martin', role: 'Étudiant', avatar: 'SM', lastMessage: 'Merci pour votre aide !', time: '14:30', unread: 2, online: true },
+        { id: 2, name: 'Leila Ouazzani', role: 'Étudiant', avatar: 'LO', lastMessage: 'Je n\'ai pas reçu le lien', time: '09:20', unread: 1, online: false },
+        { id: 3, name: 'Fatima Zahra', role: 'Étudiant', avatar: 'FZ', lastMessage: 'Quand est le prochain examen ?', time: 'Hier', unread: 3, online: true },
+        { id: 4, name: 'Prof. Ahmed', role: 'Formateur', avatar: 'PA', lastMessage: 'Les résultats sont disponibles', time: 'Hier', unread: 0, online: true },
+      ]);
+      setLoading(false);
+    }
   };
 
+  const fetchMessages = async (conversationId) => {
+    try {
+      const response = await api.get(`/student/conversations/${conversationId}/messages`);
+      setMessages(response.data?.data || []);
+    } catch (error) {
+      console.error("Erreur chargement messages:", error);
+    }
+  };
+
+  const sendMessage = async () => {
+    if (!newMessage.trim() || !selectedConversation) return;
+    
+    setSending(true);
+    const messageText = newMessage;
+    setNewMessage('');
+    
+    const tempMessage = {
+      id: Date.now(),
+      text: messageText,
+      sender: 'me',
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      isMe: true,
+      temp: true
+    };
+    setMessages(prev => [...prev, tempMessage]);
+    
+    try {
+      const response = await api.post(`/student/conversations/${selectedConversation.id}/messages`, {
+        message: messageText
+      });
+      setMessages(prev => prev.map(m => 
+        m.temp && m.text === messageText ? { ...response.data?.data, isMe: true } : m
+      ));
+    } catch (error) {
+      console.error("Erreur envoi message:", error);
+      alert("Erreur lors de l'envoi du message");
+      setMessages(prev => prev.filter(m => !m.temp));
+      setNewMessage(messageText);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  // ✅ Modifier un message
+  const handleEditMessage = async () => {
+    if (!editText.trim() || !editingMessage) return;
+    
+    try {
+      const response = await api.put(`/student/messages/${editingMessage.id}`, {
+        message: editText
+      });
+      setMessages(prev => prev.map(m => 
+        m.id === editingMessage.id ? { ...m, text: editText } : m
+      ));
+      setEditingMessage(null);
+      setEditText('');
+    } catch (error) {
+      console.error("Erreur modification:", error);
+      alert("Erreur lors de la modification");
+    }
+  };
+
+  // ✅ Supprimer un message
+  const handleDeleteMessage = async (id) => {
+    if (!window.confirm("Supprimer ce message ?")) return;
+    
+    setDeletingId(id);
+    try {
+      await api.delete(`/student/messages/${id}`);
+      setMessages(prev => prev.filter(m => m.id !== id));
+    } catch (error) {
+      console.error("Erreur suppression:", error);
+      alert("Erreur lors de la suppression");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  };
+
+  const filteredConversations = conversations.filter(conv => {
+    if (filter === 'all') return true;
+    if (filter === 'student') return conv.role === 'Étudiant';
+    if (filter === 'teacher') return conv.role === 'Formateur';
+    return true;
+  });
+
+  const formatTime = (time) => {
+    if (time === 'Hier') return time;
+    if (time.includes(':')) return time;
+    return new Date(time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC]">
+        <div className="text-2xl font-black text-[#002366] animate-pulse">Chargement...</div>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex h-screen bg-[#F8FAFC] font-sans text-[#1E293B] overflow-hidden">
-      <main className="flex-1 flex flex-col h-full overflow-hidden">
-        
+    <div className="flex min-h-screen bg-[#F8FAFC] font-sans">
+      <main className="flex-1 flex flex-col overflow-hidden">
         <Navbar />
-
-        <motion.div 
-          variants={containerVars}
-          initial="hidden"
-          animate="visible"
-          className="flex-1 flex gap-6 p-4 md:p-8 overflow-hidden max-w-[1600px] mx-auto w-full relative"
-        >
-          {/* 1. CHATS LIST */}
-          <motion.div 
-            variants={itemVars} 
-            className={`${showChatArea ? 'hidden lg:flex' : 'flex'} w-full lg:w-[380px] flex-col gap-6 h-full transition-all`}
-          >
-            <div className="flex justify-between items-center px-2">
-              <h2 className="text-2xl md:text-3xl font-black text-[#002366] tracking-tight">Messages</h2>
-              <motion.button 
-                whileHover={{ scale: 1.1, rotate: 90 }}
-                whileTap={{ scale: 0.9 }}
-                className="p-3 bg-white border border-slate-100 rounded-2xl shadow-sm text-blue-600"
+        
+        <div className="flex-1 overflow-hidden p-4 md:p-6">
+          <div className="h-full flex flex-col bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-100">
+              <div>
+                <h1 className="text-xl md:text-2xl font-black text-[#002366]">Messages</h1>
+                <p className="text-xs text-gray-400">Discutez avec l'équipe et les étudiants</p>
+              </div>
+              <button 
+                onClick={() => navigate('/messages/new')}
+                className="p-2 bg-[#E55B2D] text-white rounded-xl hover:bg-orange-600 transition-colors"
               >
-                <Edit3 size={20} />
-              </motion.button>
+                <Plus size={20} />
+              </button>
             </div>
-
-            <div className="flex gap-2 p-1.5 bg-slate-100/50 rounded-2xl">
-              {['All Chats', 'Teachers', 'Groups'].map((tab, i) => (
-                <button key={tab} className={`flex-1 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${i === 0 ? 'bg-white text-[#002366] shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>
-                  {tab}
-                </button>
-              ))}
+            
+            {/* Filters */}
+            <div className="flex gap-2 p-3 border-b border-gray-100 overflow-x-auto">
+              <button
+                onClick={() => setFilter('all')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 whitespace-nowrap transition-all ${
+                  filter === 'all' 
+                    ? 'bg-[#2F5D9F] text-white shadow-sm' 
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                <Users size={16} />
+                Tous
+                <span className="text-xs ml-1 opacity-70">{conversations.length}</span>
+              </button>
+              <button
+                onClick={() => setFilter('student')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 whitespace-nowrap transition-all ${
+                  filter === 'student' 
+                    ? 'bg-[#2F5D9F] text-white shadow-sm' 
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                <Users size={16} />
+                Étudiants
+                <span className="text-xs ml-1 opacity-70">{conversations.filter(c => c.role === 'Étudiant').length}</span>
+              </button>
+              <button
+                onClick={() => setFilter('teacher')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 whitespace-nowrap transition-all ${
+                  filter === 'teacher' 
+                    ? 'bg-[#2F5D9F] text-white shadow-sm' 
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                <UserCheck size={16} />
+                Formateurs
+                <span className="text-xs ml-1 opacity-70">{conversations.filter(c => c.role === 'Formateur').length}</span>
+              </button>
             </div>
-
-            <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
-              <ChatPreview 
-                active={activeChat === 0}
-                onClick={() => handleSelectChat(0)}
-                name="Dr. Sarah Miller" 
-                msg="I've reviewed your thesis proposal..." 
-                time="10:42 AM" 
-                avatar="https://i.pravatar.cc/150?u=sarah"
-                online
-                unread={1}
-              />
-              <ChatPreview 
-                active={activeChat === 1}
-                onClick={() => handleSelectChat(1)}
-                name="Prof. Marcus Thompson" 
-                msg="The physics lab results are uploaded." 
-                time="Yesterday" 
-                avatar="https://i.pravatar.cc/150?u=marcus"
-              />
-            </div>
-          </motion.div>
-
-          {/* 2. CHAT AREA */}
-          <motion.div 
-            variants={itemVars} 
-            className={`${showChatArea ? 'flex' : 'hidden lg:flex'} flex-1 bg-white border border-slate-100 rounded-[30px] md:rounded-[40px] shadow-[0px_40px_80px_-20px_rgba(0,0,0,0.03)] flex flex-col overflow-hidden relative`}
-          >
-            <header className="p-4 md:p-6 border-b border-slate-50 flex justify-between items-center bg-white/80 backdrop-blur-md sticky top-0 z-10">
-              <div className="flex items-center gap-3 md:gap-4">
-                {/* Back button for mobile */}
-                <button onClick={() => setShowChatArea(false)} className="lg:hidden p-2 -ml-2 text-slate-400 hover:text-blue-600">
-                  <ArrowLeft size={24} />
-                </button>
-                <div className="relative">
-                  <img src="https://i.pravatar.cc/150?u=sarah" className="w-10 h-10 md:w-12 md:h-12 rounded-2xl object-cover shadow-sm" alt="" />
-                  <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-green-500 border-4 border-white rounded-full" />
+            
+            {/* Chat Container */}
+            <div className="flex-1 flex flex-col md:flex-row overflow-hidden min-h-[400px]">
+              
+              {/* Sidebar */}
+              <div className={`${
+                sidebarOpen ? 'absolute inset-0 z-50 bg-white md:relative md:bg-transparent' : 'hidden md:block'
+              } md:w-80 w-full flex-shrink-0 border-r border-gray-100 flex flex-col overflow-hidden`}>
+                <div className="flex items-center justify-between p-3 border-b border-gray-100 md:hidden">
+                  <h3 className="font-bold text-[#002366]">Conversations</h3>
+                  <button onClick={() => setSidebarOpen(false)} className="p-2">
+                    <X size={20} />
+                  </button>
                 </div>
-                <div>
-                  <h4 className="font-black text-sm md:text-base text-[#002366] leading-none">Dr. Sarah Miller</h4>
-                  <p className="text-[10px] md:text-[11px] font-bold text-green-500 uppercase mt-1.5 tracking-widest">Active Now</p>
+                <div className="flex-1 overflow-y-auto">
+                  {filteredConversations.map((conv) => (
+                    <div
+                      key={conv.id}
+                      onClick={() => {
+                        setSelectedConversation(conv);
+                        setSidebarOpen(false);
+                      }}
+                      className={`flex items-center gap-3 p-3 cursor-pointer transition-all hover:bg-gray-50 ${
+                        selectedConversation?.id === conv.id ? 'bg-orange-50 border-l-4 border-[#E55B2D]' : 'border-l-4 border-transparent'
+                      }`}
+                    >
+                      <div className="relative">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#2F5D9F] to-[#E55B2D] flex items-center justify-center text-white text-sm font-medium">
+                          {conv.avatar || conv.name.charAt(0) + conv.name.split(' ')[1]?.charAt(0) || conv.name.charAt(1)}
+                        </div>
+                        {conv.online && (
+                          <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="truncate text-sm font-medium text-gray-800">{conv.name}</p>
+                          <span className="text-[10px] text-gray-400 flex-shrink-0">{formatTime(conv.time)}</span>
+                        </div>
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="truncate text-xs text-gray-500">{conv.lastMessage}</p>
+                          {conv.unread > 0 && (
+                            <span className="bg-[#E55B2D] text-white text-[10px] font-medium rounded-full h-5 min-w-5 px-1.5 flex items-center justify-center flex-shrink-0">
+                              {conv.unread}
+                            </span>
+                          )}
+                        </div>
+                        <div className="mt-1">
+                          <span className="text-[10px] text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded">
+                            {conv.role}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-              <div className="flex items-center gap-1 md:gap-2">
-                <HeaderAction icon={<Video className="w-5 h-5" />} />
-                <HeaderAction icon={<Phone className="w-5 h-5" />} />
-                <HeaderAction icon={<MoreHorizontal className="w-5 h-5" />} className="hidden sm:flex" />
+              
+              {/* Chat Area */}
+              <div className="flex-1 flex flex-col overflow-hidden">
+                {selectedConversation ? (
+                  <>
+                    {/* Chat Header */}
+                    <div className="flex items-center gap-3 p-3 border-b border-gray-100 bg-white">
+                      <button 
+                        onClick={() => setSidebarOpen(true)} 
+                        className="md:hidden p-2 -ml-2 text-gray-500"
+                      >
+                        <Menu size={20} />
+                      </button>
+                      <div className="relative">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#2F5D9F] to-[#E55B2D] flex items-center justify-center text-white text-sm font-medium">
+                          {selectedConversation.avatar || selectedConversation.name.charAt(0) + (selectedConversation.name.split(' ')[1]?.charAt(0) || '')}
+                        </div>
+                        {selectedConversation.online && (
+                          <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium text-gray-800">{selectedConversation.name}</p>
+                        <p className="text-xs text-gray-400">
+                          {selectedConversation.role} {selectedConversation.online && '• En ligne'}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    {/* Messages Area */}
+                    <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50/30">
+                      {messages.map((msg, idx) => (
+                        <div
+                          key={msg.id || idx}
+                          className={`flex ${msg.isMe ? 'justify-end' : 'justify-start'} group`}
+                        >
+                          <div className={`max-w-[85%] md:max-w-[70%] rounded-2xl px-4 py-2 relative ${
+                            msg.isMe 
+                              ? 'bg-[#2F5D9F] text-white' 
+                              : 'bg-white text-gray-800 border border-gray-100 shadow-sm'
+                          }`}>
+                            {editingMessage?.id === msg.id ? (
+                              // Mode édition
+                              <div className="flex flex-col gap-2">
+                                <input
+                                  type="text"
+                                  value={editText}
+                                  onChange={(e) => setEditText(e.target.value)}
+                                  className="bg-white text-gray-800 px-3 py-2 rounded-lg text-sm outline-none focus:ring-2 focus:ring-[#E55B2D]"
+                                  autoFocus
+                                />
+                                <div className="flex gap-2 justify-end">
+                                  <button
+                                    onClick={() => setEditingMessage(null)}
+                                    className="p-1 text-gray-500 hover:text-gray-700"
+                                  >
+                                    <XCircle size={16} />
+                                  </button>
+                                  <button
+                                    onClick={handleEditMessage}
+                                    className="p-1 text-green-500 hover:text-green-700"
+                                  >
+                                    <Check size={16} />
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <>
+                                <p className="text-sm break-words">{msg.text}</p>
+                                <p className={`text-[10px] mt-1 ${msg.isMe ? 'text-white/70' : 'text-gray-400'}`}>
+                                  {msg.time}
+                                  {msg.isMe && <span className="ml-2">✓✓</span>}
+                                </p>
+                              </>
+                            )}
+                          </div>
+                          {/* Boutons d'action (seulement pour mes messages) */}
+                          {msg.isMe && !editingMessage && (
+                            <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 ml-2">
+                              <button
+                                onClick={() => {
+                                  setEditingMessage(msg);
+                                  setEditText(msg.text);
+                                }}
+                                className="p-1 text-gray-400 hover:text-blue-500"
+                              >
+                                <Edit2 size={14} />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteMessage(msg.id)}
+                                disabled={deletingId === msg.id}
+                                className="p-1 text-gray-400 hover:text-red-500"
+                              >
+                                {deletingId === msg.id ? (
+                                  <div className="w-3 h-3 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
+                                ) : (
+                                  <Trash2 size={14} />
+                                )}
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                      <div ref={messagesEndRef} />
+                    </div>
+                    
+                    {/* Input Area */}
+                    <div className="flex items-center gap-2 p-3 border-t border-gray-100 bg-white">
+                      <input
+                        type="text"
+                        value={newMessage}
+                        onChange={(e) => setNewMessage(e.target.value)}
+                        onKeyPress={handleKeyPress}
+                        placeholder="Écrire un message..."
+                        className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:border-[#E55B2D] focus:ring-2 focus:ring-[#E55B2D]/20 transition-all"
+                        disabled={sending}
+                      />
+                      <button
+                        onClick={sendMessage}
+                        disabled={!newMessage.trim() || sending}
+                        className="p-2.5 bg-[#E55B2D] text-white rounded-xl hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {sending ? (
+                          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <Send className="h-5 w-5" />
+                        )}
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex-1 flex items-center justify-center">
+                    <div className="text-center">
+                      <MessageSquare size={48} className="mx-auto text-gray-300 mb-3" />
+                      <p className="text-gray-400">Sélectionnez une conversation</p>
+                    </div>
+                  </div>
+                )}
               </div>
-            </header>
-
-            <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 md:space-y-8 bg-[#FDFEFF]/50 custom-scrollbar">
-              <div className="flex justify-center"><span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em] bg-slate-50 px-4 py-2 rounded-full">Today</span></div>
-              <MessageBubble text="Hello Alex! I've had a chance to look over your research proposal for the Honors Project." time="10:38 AM" sender="other" />
-              <MessageBubble text="Thank you, Dr. Miller! I was actually worried about the data collection part. Do you suggest a smaller sample size?" time="10:40 AM" sender="me" isRead />
+              
+              {/* Overlay pour mobile */}
+              {sidebarOpen && (
+                <div 
+                  className="fixed inset-0 bg-black/50 z-40 md:hidden"
+                  onClick={() => setSidebarOpen(false)}
+                />
+              )}
             </div>
-
-            <footer className="p-4 md:p-6 bg-white border-t border-slate-50">
-              <div className="flex items-center gap-3 md:gap-4">
-                <div className="flex-1 bg-slate-50 rounded-[24px] md:rounded-[28px] p-2 flex items-center gap-1 group transition-all focus-within:ring-4 focus-within:ring-blue-500/5 focus-within:bg-white focus-within:border-slate-200 border border-transparent min-w-0">
-                  <motion.button whileHover={{ scale: 1.1 }} className="p-2 text-slate-400 hover:text-blue-600 flex-shrink-0">
-                    <Plus size={22}/>
-                  </motion.button>
-                  <input 
-                    type="text" 
-                    placeholder="Type a message..." 
-                    className="flex-1 bg-transparent border-none outline-none py-2 md:py-3 px-2 text-xs md:text-sm font-medium min-w-0" 
-                  />
-                  <motion.button whileHover={{ scale: 1.1 }} className="hidden sm:block p-2 text-slate-400 hover:text-blue-600 flex-shrink-0">
-                    <Smile size={22}/>
-                  </motion.button>
-                </div>
-
-                <motion.button 
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="bg-[#002366] text-white w-[48px] h-[48px] md:w-[54px] md:h-[54px] rounded-[18px] md:rounded-[20px] shadow-lg shadow-blue-900/20 flex-shrink-0 flex items-center justify-center transition-all"
-                >
-                  <Send strokeWidth={2.5} className="w-5 h-5" />
-                </motion.button>
-              </div>
-              <p className="hidden md:block text-[9px] text-center text-slate-300 font-black uppercase tracking-[0.2em] mt-4">Press Shift + Enter for new line • Communications are logged</p>
-            </footer>
-          </motion.div>
-
-          {/* 3. INFO SIDEBAR - Hidden on mobile/tablette */}
-          <motion.div variants={itemVars} className="hidden xl:flex w-[320px] flex-col gap-6 h-full">
-            <div className="bg-white border border-slate-100 rounded-[32px] p-8 text-center shadow-sm relative overflow-hidden group">
-              <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-full blur-3xl opacity-50 group-hover:scale-150 transition-all" />
-              <motion.img 
-                whileHover={{ scale: 1.05, rotate: 2 }}
-                src="https://i.pravatar.cc/150?u=sarah" 
-                className="w-24 h-24 rounded-[32px] mx-auto mb-4 border-4 border-white shadow-xl relative z-10"
-              />
-              <h4 className="font-black text-xl text-[#002366]">Dr. Sarah Miller</h4>
-              <p className="text-xs font-bold text-slate-400 mt-1">Head of Physics</p>
-              <div className="flex justify-center gap-2 mt-6">
-                <span className="px-3 py-1.5 bg-blue-50 text-blue-600 text-[9px] font-black uppercase tracking-widest rounded-lg">Professor</span>
-                <span className="px-3 py-1.5 bg-orange-50 text-orange-600 text-[9px] font-black uppercase tracking-widest rounded-lg">Honors Mentor</span>
-              </div>
-            </div>
-
-            <div className="bg-white border border-slate-100 rounded-[32px] p-6 shadow-sm overflow-y-auto custom-scrollbar">
-              <div className="flex items-center justify-between mb-6">
-                <h5 className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">Shared Files</h5>
-                <span className="text-[10px] font-black text-blue-600 cursor-pointer">See all</span>
-              </div>
-              <div className="space-y-4">
-                <FileItem name="Syllabus_2024.pdf" date="Oct 12" icon={<FileText size={18} className="text-red-500" />} />
-                <FileItem name="Lab_Setup_Diagram.jpg" date="Sep 28" icon={<ImageIcon size={18} className="text-blue-500" />} />
-              </div>
-            </div>
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
       </main>
     </div>
   );
-};
-
-// --- Components ---
-
-const ChatPreview = ({ name, msg, time, avatar, online, unread, active, onClick }) => (
-  <motion.div 
-    onClick={onClick}
-    whileHover={{ x: 8, backgroundColor: "white" }}
-    className={`p-4 md:p-5 rounded-[24px] md:rounded-[28px] cursor-pointer flex gap-3 md:gap-4 transition-all relative ${active ? 'bg-white shadow-xl shadow-slate-200/40 border border-slate-50' : 'border border-transparent'}`}
-  >
-    <div className="relative flex-shrink-0">
-      <img src={avatar} className="w-12 h-12 md:w-14 md:h-14 rounded-2xl object-cover shadow-sm" alt="" />
-      {online && <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-green-500 border-4 border-white rounded-full" />}
-    </div>
-    <div className="flex-1 min-w-0">
-      <div className="flex justify-between items-start mb-1">
-        <h5 className={`text-sm font-black transition-colors truncate ${active ? 'text-blue-600' : 'text-[#002366]'}`}>{name}</h5>
-        <span className="text-[9px] md:text-[10px] font-bold text-slate-300 whitespace-nowrap ml-2">{time}</span>
-      </div>
-      <p className="text-xs text-slate-400 font-medium truncate leading-relaxed">{msg}</p>
-    </div>
-    {unread && (
-      <div className="absolute right-4 bottom-4 md:right-5 md:bottom-5 w-5 h-5 bg-blue-600 text-white text-[9px] font-black flex items-center justify-center rounded-lg shadow-lg">
-        {unread}
-      </div>
-    )}
-  </motion.div>
-);
-
-const MessageBubble = ({ text, time, sender, isRead }) => (
-  <motion.div 
-    initial={{ opacity: 0, x: sender === 'me' ? 20 : -20 }}
-    animate={{ opacity: 1, x: 0 }}
-    transition={springTransition}
-    className={`flex flex-col ${sender === 'me' ? 'items-end' : 'items-start'}`}
-  >
-    <div className={`max-w-[85%] md:max-w-[75%] p-4 md:p-5 rounded-[22px] md:rounded-[28px] text-[13px] md:text-[14px] leading-relaxed font-medium shadow-sm ${
-      sender === 'me' 
-        ? 'bg-[#002366] text-white rounded-tr-none shadow-blue-900/10' 
-        : 'bg-white text-[#1E293B] rounded-tl-none border border-slate-100'
-    }`}>
-      {text}
-    </div>
-    <div className="mt-2 flex items-center gap-2 px-1">
-      <span className="text-[9px] font-bold text-slate-300 uppercase tracking-widest">{time}</span>
-      {sender === 'me' && isRead && <span className="text-[9px] font-black text-blue-500 uppercase tracking-widest">Read</span>}
-    </div>
-  </motion.div>
-);
-
-const FileItem = ({ name, date, icon }) => (
-  <motion.div whileHover={{ x: 5 }} className="flex items-center gap-3 group cursor-pointer">
-    <div className="p-3 bg-slate-50 rounded-xl group-hover:bg-white group-hover:shadow-sm transition-all">{icon}</div>
-    <div className="flex-1 min-w-0">
-      <h6 className="text-[11px] md:text-[12px] font-black text-[#002366] truncate">{name}</h6>
-      <p className="text-[9px] font-bold text-slate-300 uppercase tracking-widest">{date}</p>
-    </div>
-  </motion.div>
-);
-
-const HeaderAction = ({ icon, className }) => (
-  <motion.button 
-    whileHover={{ scale: 1.1, backgroundColor: "#F8FAFC" }}
-    whileTap={{ scale: 0.9 }}
-    className={`p-2.5 md:p-3 text-slate-400 hover:text-blue-600 rounded-xl transition-all border border-transparent hover:border-slate-100 ${className}`}
-  >
-    {icon}
-  </motion.button>
-);
-
-export default Messages;
+}

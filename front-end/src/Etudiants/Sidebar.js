@@ -3,7 +3,9 @@ import { Link, useLocation } from "react-router-dom"; // Khass t-installer react
 import {
   LayoutDashboard, MessageSquare, UserCircle, Clock,
   ClipboardCheck, CalendarX, FileText, CalendarDays,
-  CreditCard, MessageSquareWarning, Bell, Settings
+  CreditCard, MessageSquareWarning, Bell, Settings,
+  Library,
+  VideoIcon
 } from "lucide-react";
 
 export default function Sidebar() {
@@ -18,8 +20,12 @@ export default function Sidebar() {
     { id: "attendance", label: "Absences", path: "/attendance", icon: <CalendarX size={20} /> },
     { id: "homework", label: "Devoirs", path: "/homework", icon: <FileText size={20} /> },
     { id: "activities", label: "Activités", path: "/activities", icon: <CalendarDays size={20} /> },
-    { id: "profile", label: "Profile", path: "/profile", icon: <CreditCard size={20} /> },
+    { id: "payment", label: "Payment", path: "/payment", icon: <CreditCard size={20} /> },
     { id: "settings", label: "Paramétres", path: "/paramétres", icon: <MessageSquareWarning size={20} /> },
+     { id: "library", label: "Bibliothèque", path: "/library", icon: <Library size={20} /> },
+    
+      { id: "tutorials", label: "Tutorials", path: "/Tutorials", icon: <VideoIcon size={20} /> },
+      
   ];
 
   return (
@@ -51,7 +57,7 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      <div className="p-4 border-t">
+      {/* <div className="p-4 border-t">
         <Link
           to="/profile"
           className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium w-full transition-all duration-300 border-l-4
@@ -63,7 +69,7 @@ export default function Sidebar() {
           <UserCircle className="w-5 h-5" />
           Mon Profil
         </Link>
-      </div>
+      </div> */}
     </div>
   );
 }
