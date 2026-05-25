@@ -24,40 +24,65 @@ const Contact1 = () => {
     sujet: '',
     message: ''
   });
-  const [status, setStatus] = useState(null); // null | 'loading' | 'success' | 'error'
+  const [status, setStatus] = useState(null);
 
   const handleChange = (e) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setStatus('loading');
-    try {
-      // ✅ Correct endpoint for your API
-      const res = await fetch('/api/student/contact-support', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: `${formData.prenom} ${formData.nom}`,
-          email: formData.email,
-          subject: formData.sujet,
-          message: formData.message
-        })
+  e.preventDefault();
+  setStatus('loading');
+
+  try {
+
+    const response = await fetch('http://127.0.0.1:8000/api/contact-support', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify({
+        name: `${formData.prenom} ${formData.nom}`,
+        email: formData.email,
+        subject: formData.sujet,
+        message: formData.message
+      })
+    });
+
+    const data = await response.json();
+
+    console.log('API Response:', data);
+
+    if (response.ok && data.success) {
+
+      setStatus('success');
+
+      setFormData({
+        nom: '',
+        prenom: '',
+        email: '',
+        telephone: '',
+        sujet: '',
+        message: ''
       });
-      if (res.ok) {
-        setStatus('success');
-        setFormData({ nom: '', prenom: '', email: '', telephone: '', sujet: '', message: '' });
-      } else {
-        const errorData = await res.json();
-        console.error('API Error:', errorData);
-        setStatus('error');
-      }
-    } catch (error) {
-      console.error('Fetch Error:', error);
+
+    } else {
+
+      console.error('API Error:', data);
       setStatus('error');
+
     }
-  };
+
+  } catch (error) {
+
+    console.error('Fetch Error:', error);
+    setStatus('error');
+
+  }
+
+  setTimeout(() => setStatus(null), 5000);
+};
 
   const infos = [
     {
@@ -76,13 +101,13 @@ const Contact1 = () => {
       icon: <MapPin size={20} />,
       label: 'Adresse',
       lines: ['03, rue Ibn Achir', 'Quartier Nzaha Souryenne', 'Tanger, Maroc'],
-      href: [null]
+      href: [null, null, null]
     },
     {
       icon: <Clock size={20} />,
       label: 'Horaires',
       lines: ['Lun – Ven : 08h00 – 17h00', 'Sam : 08h00 – 12h00'],
-      href: [null]
+      href: [null, null]
     }
   ];
 
@@ -99,7 +124,6 @@ const Contact1 = () => {
     <div className="selection:bg-[#F48120] selection:text-white">
       <Navbar />
 
-      {/* --- HERO --- */}
       <section className="pt-40 pb-24 px-6 bg-gradient-to-br from-[#001233] via-[#002366] to-[#001a4d] relative overflow-hidden">
         <div className="absolute -top-40 -right-40 w-[500px] h-[500px] bg-[#F48120]/10 rounded-full blur-[120px] pointer-events-none" />
         <div className="absolute -bottom-40 -left-40 w-[400px] h-[400px] bg-blue-500/10 rounded-full blur-[100px] pointer-events-none" />
@@ -135,10 +159,7 @@ const Contact1 = () => {
         </div>
       </section>
 
-      {/* --- INFOS + FORMULAIRE --- */}
       <section className="py-24 px-6 md:px-20 max-w-7xl mx-auto grid md:grid-cols-5 gap-16 items-start">
-
-        {/* LEFT — Infos contact */}
         <motion.div
           initial={{ opacity: 0, x: -40 }}
           whileInView={{ opacity: 1, x: 0 }}
@@ -186,7 +207,6 @@ const Contact1 = () => {
           </div>
         </motion.div>
 
-        {/* RIGHT — Formulaire */}
         <motion.div
           initial={{ opacity: 0, x: 40 }}
           whileInView={{ opacity: 1, x: 0 }}
@@ -350,7 +370,6 @@ const Contact1 = () => {
         </motion.div>
       </section>
 
-      {/* --- MAP SECTION --- */}
       <section className="px-6 md:px-20 pb-24 max-w-7xl mx-auto">
         <div className="rounded-[40px] overflow-hidden border border-slate-100 shadow-xl h-80">
           <iframe

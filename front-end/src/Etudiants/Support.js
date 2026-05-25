@@ -85,7 +85,7 @@ const Support = () => {
     setErrorMsg('');
     
     try {
-      const response = await api.post('/student/contact-support', formData);
+      const response = await api.post('/contact-support', formData);
       if (response.data.success) {
         setSubmitted(true);
         setFormData({ name: '', email: '', subject: '', message: '' });
