@@ -78,7 +78,7 @@ function App() {
                       <Route path="/library"         element={<Library />} />
                       <Route path="/library/favorites" element={<Library />} />
                       <Route path="/tutorials"         element={<Tutorials />} />
-                      <Route path="/tutorials/:id/details" element={<TutorialDetails />} />
+                      <Route path="/tutorials/:id" element={<TutorialDetails />} />
                       <Route path="/homework/:id/upload" element={<UploadHomework />} />
                       <Route path="/my-submissions"    element={<MySubmissions />} />
                       <Route path="/my-leave-requests" element={<MyLeaveRequests />} />

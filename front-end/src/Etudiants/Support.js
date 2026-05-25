@@ -69,6 +69,13 @@ const Support = () => {
     }
   ];
 
+  // Coordonnées réelles (de l'image Portes Ouvertes)
+  const contactInfo = {
+    email: "amityinternational2024@gmail.com",
+    phone: "+212 539 94 44 81",
+    whatsapp: "+212 665 48 27 25"
+  };
+
   const filteredFaqs = faqs.filter(faq =>
     faq.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
     faq.answer.toLowerCase().includes(searchTerm.toLowerCase())
@@ -140,30 +147,31 @@ const Support = () => {
               </p>
             </motion.div>
 
-            {/* Quick Contact Cards */}
+            {/* Quick Contact Cards - AVEC LES VRAIES COORDONNÉES */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
               <ContactCard 
                 icon={<Mail className="w-6 h-6" />}
-                title="Support Email"
-                info="support@amity.com"
+                title="Email"
+                info={contactInfo.email}
                 action="Envoyer un email"
                 color="blue"
-                onClick={() => window.location.href = 'mailto:support@amity.com'}
+                onClick={() => window.location.href = `mailto:${contactInfo.email}`}
               />
               <ContactCard 
                 icon={<Phone className="w-6 h-6" />}
-                title="Hotline"
-                info="+212 5XX XXX XXX"
+                title="Téléphone"
+                info={contactInfo.phone}
                 action="Appeler maintenant"
                 color="orange"
-                onClick={() => window.location.href = 'tel:+212500000000'}
+                onClick={() => window.location.href = `tel:${contactInfo.phone.replace(/\s/g, '')}`}
               />
               <ContactCard 
                 icon={<MessageSquare className="w-6 h-6" />}
-                title="Chat en direct"
-                info="Disponible 24/7"
-                action="Démarrer le chat"
+                title="WhatsApp"
+                info={contactInfo.whatsapp}
+                action="Envoyer un message"
                 color="green"
+                onClick={() => window.open(`https://wa.me/${contactInfo.whatsapp.replace(/\s/g, '')}`, '_blank')}
               />
             </div>
 

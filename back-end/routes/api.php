@@ -12,7 +12,7 @@ Route::get('/test', function() {
 
 // Public
 Route::post('/login', [AuthController::class, 'login']);
-
+Route::post('/contact-support', [StudentController::class, 'contactSupport']);
 // Protected
 Route::middleware('auth:api')->group(function () {
 
@@ -60,7 +60,7 @@ Route::middleware('auth:api')->group(function () {
     Route::post('/conversations/{id}/messages', [StudentController::class, 'sendMessage']);
     Route::put('/messages/{id}', [StudentController::class, 'updateMessage']);      // ← sans /student
     Route::delete('/messages/{id}', [StudentController::class, 'deleteMessage']);
-    Route::post('/contact-support', [StudentController::class, 'contactSupport']);
+
     Route::get('/student/homework/{id}/download-pdf', [StudentController::class, 'downloadPDF']);
     Route::post('/student/homework/{id}/generate-pdf', [StudentController::class, 'generateHomeworkPDF']);
             // Books routes
