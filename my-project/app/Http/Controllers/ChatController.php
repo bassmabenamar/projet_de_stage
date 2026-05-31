@@ -18,14 +18,16 @@ class ChatController extends Controller
     // GET /api/user
     public function getCurrentUser(Request $request)
     {
+        
         $user = $request->user();
-
         return response()->json([
             'user' => [
-                'id'    => $user->id,
-                'name'  => $user->name,
-                'email' => $user->email,
-                'role'  => $user->role,
+                'id'     => $user->id,
+                'prenom' => $user->prenom,
+                'nom'    => $user->nom,
+                'name'   => trim("{$user->prenom} {$user->nom}"),
+                'email'  => $user->email,
+                'role'   => $user->role,
             ]
         ]);
     }
@@ -35,7 +37,16 @@ class ChatController extends Controller
     {
         $users = User::when($request->role, fn($q, $role) => $q->where('role', $role))
             ->where('id', '!=', $request->user()->id)
-            ->get(['id', 'name', 'email', 'role']);
+            ->select('id', 'prenom', 'nom', 'email', 'role')
+            ->get()
+            ->map(fn($u) => [
+                'id'     => $u->id,
+                'prenom' => $u->prenom,
+                'nom'    => $u->nom,
+                'name'   => trim("{$u->prenom} {$u->nom}"),
+                'email'  => $u->email,
+                'role'   => $u->role,
+            ]);
 
         return response()->json(['users' => $users]);
     }
@@ -47,11 +58,9 @@ class ChatController extends Controller
 
         $conversations = $user->conversations()
             ->with(['participants' => fn($q) =>
-                $q->select('users.id', 'users.name', 'users.email', 'users.role')
+                $q->select('users.id', 'users.prenom', 'users.nom', 'users.email', 'users.role')
             ])
-            ->with(['messages' => fn($q) =>
-                $q->latest()->limit(1)
-            ])
+            ->with(['messages' => fn($q) => $q->latest()->limit(1)])
             ->latest('updated_at')
             ->get()
             ->map(function ($conv) use ($user) {
@@ -67,9 +76,11 @@ class ChatController extends Controller
                     'id'      => $conv->id,
                     'uuid'    => $conv->uuid,
                     'others'  => $other ? [[
-                        'id'   => $other->id,
-                        'name' => $other->name,
-                        'role' => $other->role,
+                        'id'     => $other->id,
+                        'prenom' => $other->prenom,
+                        'nom'    => $other->nom,
+                        'name'   => trim("{$other->prenom} {$other->nom}"),
+                        'role'   => $other->role,
                     ]] : [],
                     'lastMsg' => $lastMsg ? [
                         'text'      => $lastMsg->text,
@@ -96,9 +107,11 @@ class ChatController extends Controller
             'conversation' => [
                 'id'           => $conversation->id,
                 'participants' => $conversation->participants->map(fn($p) => [
-                    'id'   => $p->id,
-                    'name' => $p->name,
-                    'role' => $p->role,
+                    'id'     => $p->id,
+                    'prenom' => $p->prenom,
+                    'nom'    => $p->nom,
+                    'name'   => trim("{$p->prenom} {$p->nom}"),
+                    'role'   => $p->role,
                 ]),
             ]
         ]);
@@ -123,7 +136,7 @@ class ChatController extends Controller
                 'text'       => $msg->text,
                 'senderId'   => $msg->sender_id,
                 'sender_id'  => $msg->sender_id,
-                'senderName' => $msg->sender->name,
+                'senderName' => trim("{$msg->sender->prenom} {$msg->sender->nom}"),
                 'created_at' => $msg->created_at,
                 'is_read'    => $msg->is_read,
             ]);
@@ -138,9 +151,11 @@ class ChatController extends Controller
             'conversation' => [
                 'id'           => $conversation->id,
                 'participants' => $conversation->participants->map(fn($p) => [
-                    'id'   => $p->id,
-                    'name' => $p->name,
-                    'role' => $p->role,
+                    'id'     => $p->id,
+                    'prenom' => $p->prenom,
+                    'nom'    => $p->nom,
+                    'name'   => trim("{$p->prenom} {$p->nom}"),
+                    'role'   => $p->role,
                 ]),
             ]
         ]);
@@ -149,9 +164,7 @@ class ChatController extends Controller
     // POST /api/conversations
     public function createConversation(Request $request)
     {
-        $request->validate([
-            'target_user_id' => 'required|exists:users,id',
-        ]);
+        $request->validate(['target_user_id' => 'required|exists:users,id']);
 
         $user       = $request->user();
         $targetUser = User::findOrFail($request->target_user_id);
@@ -165,21 +178,40 @@ class ChatController extends Controller
             ->whereHas('participants', fn($q) => $q->where('user_id', $targetUser->id))
             ->first();
 
-        if ($existingConv) {
-            return response()->json([
-                'conversation' => $existingConv->load('participants')
-            ]);
-        }
-
-        $conversation = DB::transaction(function () use ($user, $targetUser) {
+        $conversation = $existingConv ?? DB::transaction(function () use ($user, $targetUser) {
             $conv = Conversation::create(['type' => 'direct']);
             $conv->participants()->attach([$user->id, $targetUser->id]);
             return $conv;
         });
 
+        // Load participants with prenom/nom explicitly
+        $conversation->load('participants');
+
+        $other = $conversation->participants->firstWhere('id', '!=', $user->id);
+
+        $statusCode = $existingConv ? 200 : 201;
+
         return response()->json([
-            'conversation' => $conversation->load('participants')
-        ], 201);
+            'conversation' => [
+                'id'           => $conversation->id,
+                'others'       => $other ? [[
+                    'id'     => $other->id,
+                    'prenom' => $other->prenom ?? '',
+                    'nom'    => $other->nom    ?? '',
+                    'name'   => trim(($other->prenom ?? '') . ' ' . ($other->nom ?? '')),
+                    'role'   => $other->role,
+                ]] : [],
+                'participants' => $conversation->participants->map(fn($p) => [
+                    'id'     => $p->id,
+                    'prenom' => $p->prenom ?? '',
+                    'nom'    => $p->nom    ?? '',
+                    'name'   => trim(($p->prenom ?? '') . ' ' . ($p->nom ?? '')),
+                    'role'   => $p->role,
+                ]),
+                'lastMsg' => null,
+                'unread'  => 0,
+            ]
+        ], $statusCode);
     }
 
     // POST /api/messages
@@ -213,7 +245,7 @@ class ChatController extends Controller
                 'text'       => $message->text,
                 'senderId'   => $message->sender_id,
                 'sender_id'  => $message->sender_id,
-                'senderName' => $message->sender->name,
+                'senderName' => trim("{$message->sender->prenom} {$message->sender->nom}"),
                 'created_at' => $message->created_at,
                 'is_read'    => $message->is_read,
             ]

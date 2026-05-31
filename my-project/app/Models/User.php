@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Tymon\JWTAuth\Contracts\JWTSubject;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class User extends Authenticatable implements JWTSubject
 {
@@ -23,13 +25,14 @@ class User extends Authenticatable implements JWTSubject
 
     protected $casts = [
         'email_verified_at' => 'datetime',
-        'date_naissance' => 'date',
-        'date_inscription' => 'date',
-        'date_embauche' => 'date',
-        'salaire' => 'decimal:2',
+        'date_naissance'    => 'date',
+        'date_inscription'  => 'date',
+        'date_embauche'     => 'date',
+        'salaire'           => 'decimal:2',
     ];
 
-    // JWT Methods
+    // ─── JWT ──────────────────────────────────────────────
+
     public function getJWTIdentifier()
     {
         return $this->getKey();
@@ -40,7 +43,8 @@ class User extends Authenticatable implements JWTSubject
         return [];
     }
 
-    // Relationships
+    // ─── Relations ────────────────────────────────────────
+
     public function classe()
     {
         return $this->belongsTo(Classe::class);
@@ -61,7 +65,28 @@ class User extends Authenticatable implements JWTSubject
         return $this->belongsTo(Transport::class);
     }
 
-    // Accessors
+    public function paiements()
+    {
+        return $this->hasMany(Paiement::class);
+    }
+
+    public function conversations(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            Conversation::class,
+            'conversation_participants',
+            'user_id',
+            'conversation_id'
+        )->withPivot('last_read_at')->withTimestamps();
+    }
+
+    public function messages(): HasMany
+    {
+        return $this->hasMany(Message::class, 'sender_id');
+    }
+
+    // ─── Accessors ────────────────────────────────────────
+
     public function getFullNameAttribute()
     {
         return "{$this->prenom} {$this->nom}";
@@ -72,7 +97,8 @@ class User extends Authenticatable implements JWTSubject
         return "{$this->nom} {$this->prenom}";
     }
 
-    // Helper methods
+    // ─── Helpers ──────────────────────────────────────────
+
     public function isAdmin()
     {
         return $this->role === 'admin';
@@ -92,11 +118,9 @@ class User extends Authenticatable implements JWTSubject
     {
         return $this->status === 'actif';
     }
-    public function paiements()
-{
-    return $this->hasMany(Paiement::class);
-}
-    // Scopes
+
+    // ─── Scopes ───────────────────────────────────────────
+
     public function scopeActive($query)
     {
         return $query->where('status', 'actif');
@@ -110,22 +134,5 @@ class User extends Authenticatable implements JWTSubject
     public function scopeByNiveau($query, $niveauId)
     {
         return $query->where('niveau_scolaire_id', $niveauId);
-    }
-        public function conversations(): BelongsToMany
-    {
-        return $this->belongsToMany(
-            Conversation::class,
-            'conversation_participants',
-            'user_id',
-            'conversation_id'
-        )->withPivot('last_read_at')->withTimestamps();
-    }
- 
-    /**
-     * الرسائل التي أرسلها المستخدم
-     */
-    public function messages(): HasMany
-    {
-        return $this->hasMany(Message::class, 'sender_id');
     }
 }

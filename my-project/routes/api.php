@@ -5,7 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
-use App\Http\Controllers\ProfileController;
+
 use App\Http\Controllers\PaiementController;
 use App\Http\Controllers\UserController;
     use App\Http\Controllers\TransportController;
@@ -18,9 +18,10 @@ use App\Http\Controllers\MatiereController;
 
 
 
-;
+Route::post('/login', [AuthController::class, 'login']);
+Route::get('/users', [UserController::class, 'index']); 
 
-
+Route::middleware('auth:api')->group(function () {
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -33,13 +34,13 @@ eware group. Make something great!
 |
 */
 
-Route::post('/login', [AuthController::class, 'login']);
 
-Route::get('/me', [AuthController::class, 'me']);
+Route::get('/me',    [AuthController::class, 'me']);
+Route::post('/auth/refresh', [AuthController::class, 'refresh']);
+Route::post('/auth/logout',  [AuthController::class, 'logout']);
 
-Route::put('/profile', [ProfileController::class, 'updateProfile']);
 
-Route::put('/profile/change-password', [ProfileController::class, 'changePassword']);
+
 
    Route::get('/paiements',                      [PaiementController::class, 'index']);
     Route::get('/paiements/{id}',                 [PaiementController::class, 'show']);
@@ -52,7 +53,7 @@ Route::put('/profile/change-password', [ProfileController::class, 'changePasswor
 // في ملف routes/api.php — أضف هذه المسارات
 
 
-Route::middleware('jwt.auth')->group(function () {
+
 
     // المستخدم الحالي
     Route::get('/user',    [ChatController::class, 'getCurrentUser']);
@@ -69,7 +70,7 @@ Route::middleware('jwt.auth')->group(function () {
 
     // إرسال رسالة
     Route::post('/messages',                                   [ChatController::class, 'sendMessage']);
-});
+
 
 // Caisse (nouveau)
 Route::get('/caisse',                       [CaisseOperationController::class, 'index']);
@@ -140,7 +141,7 @@ Route::prefix('transports')->group(function () {
     Route::put('/{id}', [TransportController::class, 'update']);      // PUT /api/transports/{id}
     Route::delete('/{id}', [TransportController::class, 'destroy']);  // DELETE /api/transports/{id}
 });
-Route::middleware('jwt.auth')->group(function () {
+
  
     
 });

@@ -37,10 +37,12 @@ export default function Login() {
         }
         
         }   
-        catch(error){
-            console.error("Login failed:", error);
-            alert("Login failed. Please check your credentials and try again.");
-        }
+       catch(error){
+    console.error("Status:", error.response?.status);
+    console.error("Data:", error.response?.data);
+    console.error("Headers:", error.response?.headers);
+    alert(JSON.stringify(error.response?.data));
+}
     }
   return (
     <div className="min-h-screen bg-white flex">

@@ -12,12 +12,10 @@ return [
     | as required, but they're a perfect start for most applications.
     |
     */
-
-    'defaults' => [
-        'guard' => 'web',
-        'passwords' => 'users',
-    ],
-
+'defaults' => [
+    'guard' => 'api',
+    'passwords' => 'users',
+],
     /*
     |--------------------------------------------------------------------------
     | Authentication Guards

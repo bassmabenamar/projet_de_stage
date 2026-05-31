@@ -6,18 +6,25 @@ import api from "../../api";
 const SERVER_URL = "http://localhost:3001";
 
 const ROLES = {
-  admin:     { label: "Admin",     color: "text-purple-600 bg-purple-50" },
-  formateur: { label: "Formateur", color: "text-blue-500 bg-blue-50"    },
-  etudiant:  { label: "Étudiant",  color: "text-blue-500 bg-blue-50"    },
+  admin:      { label: "Admin",      color: "text-purple-600 bg-purple-50" },
+  formateur:  { label: "Formateur",  color: "text-blue-500 bg-blue-50"    },
+  etudiant:   { label: "Étudiant",   color: "text-blue-500 bg-blue-50"    },
 };
 
-function initials(name = "") {
+function getFullName(u) {
+  if (!u) return "";
+  if (u.prenom || u.nom) return `${u.prenom || ""} ${u.nom || ""}`.trim();
+  return u.name || "";
+}
+
+function initials(u) {
+  const name = typeof u === "string" ? u : getFullName(u);
   return name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
 }
 
 function formatTime(ts) {
   if (!ts) return "";
-  const d   = new Date(ts);
+  const d = new Date(ts);
   const now = new Date();
   if (d.toDateString() === now.toDateString())
     return d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
@@ -31,9 +38,7 @@ function NewConvModal({ users, myId, onSelect, onClose }) {
       <div className="bg-white rounded-xl shadow-xl w-72 overflow-hidden">
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
           <p className="text-sm font-semibold text-gray-700">Nouvelle conversation</p>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-lg leading-none">
-            &times;
-          </button>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-lg leading-none">&times;</button>
         </div>
         <div className="max-h-60 overflow-y-auto">
           {users.filter((u) => u.id !== myId).map((u) => (
@@ -43,10 +48,12 @@ function NewConvModal({ users, myId, onSelect, onClose }) {
               className="flex items-center gap-3 w-full px-4 py-3 hover:bg-gray-50 transition-colors"
             >
               <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#2F5D9F] to-[#E55B2D] flex items-center justify-center text-white text-xs font-medium">
-                {initials(u.name)}
+                {initials(u)}
               </div>
               <div className="text-left">
-                <p className="text-sm font-medium text-gray-800">{u.name}</p>
+                <p className="text-sm font-medium text-gray-800">
+                  {u.prenom} {u.nom}
+                </p>
                 <span className={`text-[10px] px-1.5 py-0.5 rounded ${ROLES[u.role]?.color}`}>
                   {ROLES[u.role]?.label}
                 </span>
@@ -65,31 +72,36 @@ function NewConvModal({ users, myId, onSelect, onClose }) {
 
 // ─── Composant principal ──────────────────────────────────
 export default function Messages() {
-  const [currentUser,    setCurrentUser]    = useState(null);
-  const [onlineUsers,    setOnlineUsers]    = useState([]);
-  const [conversations,  setConversations]  = useState([]);
-  const [activeConvId,   setActiveConvId]   = useState(null);
-  const [messages,       setMessages]       = useState([]);
-  const [text,           setText]           = useState("");
-  const [filter,         setFilter]         = useState("all");
-  const [search,         setSearch]         = useState("");
-  const [showNewConv,    setShowNewConv]     = useState(false);
-  const [typing,         setTyping]         = useState(false);
-  const [allUsers,       setAllUsers]       = useState([]);
+  const [currentUser,   setCurrentUser]   = useState(null);
+  const [onlineUsers,   setOnlineUsers]   = useState([]);
+  const [conversations, setConversations] = useState([]);
+  const [activeConvId,  setActiveConvId]  = useState(null);
+  const [messages,      setMessages]      = useState([]);
+  const [text,          setText]          = useState("");
+  const [filter,        setFilter]        = useState("all");
+  const [search,        setSearch]        = useState("");
+  const [showNewConv,   setShowNewConv]   = useState(false);
+  const [typing,        setTyping]        = useState(false);
+  const [allUsers,      setAllUsers]      = useState([]);
 
-  // FIX: socket في ref — لا يوجد stale closure أبداً
   const socketRef       = useRef(null);
   const messagesEnd     = useRef(null);
   const typingTimer     = useRef(null);
   const activeConvIdRef = useRef(null);
   const currentUserRef  = useRef(null);
 
-  // جلب جميع المستخدمين من API
+  // Fetch all users from DB (all roles)
   useEffect(() => {
     const fetchUsers = async () => {
       try {
         const res = await api.get("/users");
-        setAllUsers(res.data.users || res.data);
+        const users = res.data.users || res.data;
+        // Normalize: ensure prenom/nom exist
+        setAllUsers(users.map((u) => ({
+          ...u,
+          prenom: u.prenom || "",
+          nom:    u.nom    || "",
+        })));
       } catch (err) {
         console.error("Failed to fetch users:", err);
       }
@@ -97,14 +109,16 @@ export default function Messages() {
     fetchUsers();
   }, []);
 
-  // الاتصال بالـ socket
+  // Connect socket
   useEffect(() => {
     const connect = async () => {
       try {
         const res  = await api.get("/user");
         const user = res.data.user || res.data;
 
-        const name   = user.name || `${user.prenom || ""} ${user.nom || ""}`.trim();
+        const prenom = user.prenom || "";
+        const nom    = user.nom    || "";
+        const name   = user.name   || `${prenom} ${nom}`.trim();
         const role   = user.role;
         const userId = user.id;
 
@@ -115,30 +129,40 @@ export default function Messages() {
           reconnectionDelay: 1000,
         });
 
-        // FIX: حفظ في ref مباشرة
         socketRef.current = s;
 
         s.on("connect", () => {
-          console.log("✅ Socket connected:", s.id);
-          setCurrentUser({ id: userId, name, role });
-          currentUserRef.current = { id: userId, name, role };
+          setCurrentUser({ id: userId, prenom, nom, name, role });
+          currentUserRef.current = { id: userId, prenom, nom, name, role };
           const token = localStorage.getItem("token");
           s.emit("register", { userId, name, role, token });
         });
 
         s.on("connect_error", (err) => {
-          console.error("❌ Socket connection error:", err.message);
+          console.error("Socket connection error:", err.message);
         });
 
         s.on("registered", ({ conversations: c }) => {
-          console.log("✅ Registered, conversations:", c?.length);
-          setConversations(c || []);
+          const list = c || [];
+          setConversations(list);
+
+          // Re-open last conversation after refresh
+          const lastConvId = localStorage.getItem("lastConvId");
+          if (lastConvId) {
+            const lastConv = list.find((conv) => String(conv.id) === String(lastConvId));
+            if (lastConv && lastConv.others?.[0]) {
+              s.emit("open_conversation", {
+                targetUserId: lastConv.others[0].id,
+                token: localStorage.getItem("token"),
+              });
+            }
+          }
         });
 
         s.on("user_status_change", ({ userId: uid, online, userData }) => {
           setOnlineUsers((prev) => {
             const updated = [...prev];
-            const idx     = updated.findIndex((u) => u.id === uid);
+            const idx = updated.findIndex((u) => u.id === uid);
             if (idx !== -1) {
               updated[idx] = { ...updated[idx], online };
             } else if (online && userData) {
@@ -153,25 +177,40 @@ export default function Messages() {
         });
 
         s.on("conversation_opened", ({ conversation, conversations: c }) => {
-          setConversations(c || []);
+          const incomingList  = c || [];
+
+          // Always ensure the opened conversation stays in the list with full data
+          const alreadyInList = incomingList.some((conv) => conv.id === conversation.id);
+          let mergedList;
+          if (alreadyInList) {
+            // Update existing entry preserving others/lastMsg
+            mergedList = incomingList.map((conv) => {
+              if (conv.id !== conversation.id) return conv;
+              const { messages: _m, ...rest } = conversation;
+              return { ...conv, ...rest };
+            });
+          } else {
+            // Prepend brand-new conversation (without messages array)
+            const { messages: _m, ...convWithoutMessages } = conversation;
+            mergedList = [convWithoutMessages, ...incomingList];
+          }
+
+          setConversations(mergedList);
           setActiveConvId(conversation.id);
           activeConvIdRef.current = conversation.id;
           setMessages(conversation.messages || []);
-          // FIX: استخدم s مباشرة + conversationId (وليس convId)
+          localStorage.setItem("lastConvId", conversation.id);
           s.emit("mark_read", { conversationId: conversation.id });
         });
 
-        // FIX: السيرفر يرسل `message` وليس `msg`
         s.on("new_message", ({ message: msg, conversationId }) => {
           if (conversationId === activeConvIdRef.current) {
             setMessages((prev) => {
               if (prev.find((m) => m.id === msg.id)) return prev;
               return [...prev, msg];
             });
-            // FIX: conversationId وليس convId
             s.emit("mark_read", { conversationId });
           }
-
           setConversations((prev) =>
             prev.map((conv) =>
               conv.id === conversationId
@@ -188,24 +227,20 @@ export default function Messages() {
         s.on("error", ({ message: errMsg }) => {
           console.error("Socket error:", errMsg);
         });
+
       } catch (err) {
         console.error("Failed to connect:", err);
       }
     };
 
     connect();
-
-    // FIX: cleanup يستخدم ref
-    return () => {
-      socketRef.current?.disconnect();
-    };
+    return () => { socketRef.current?.disconnect(); };
   }, []);
 
   useEffect(() => { messagesEnd.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, typing]);
   useEffect(() => { activeConvIdRef.current = activeConvId; }, [activeConvId]);
   useEffect(() => { currentUserRef.current  = currentUser;  }, [currentUser]);
 
-  // ── إرسال رسالة ──────────────────────────────────────
   const sendMessage = () => {
     if (!text.trim() || !activeConvId || !socketRef.current) return;
     const token = localStorage.getItem("token");
@@ -229,21 +264,22 @@ export default function Messages() {
     socketRef.current?.emit("open_conversation", { targetUserId, token });
   };
 
-  // دمج قائمة المستخدمين مع حالة الاتصال
+  // Merge allUsers with online status
   const mergedUsers = allUsers.map((u) => {
     const live = onlineUsers.find((o) => o.id === u.id);
     return { ...u, online: live?.online || false };
   });
 
-  // فلترة المحادثات
+  // Filter conversations
   const filteredConvs = conversations
     .filter((c) => filter === "all" || c.others?.some((o) => o.role === filter))
     .filter((c) => {
       if (!search.trim()) return true;
       const q = search.toLowerCase();
-      return c.others?.some(
-        (o) => o.name?.toLowerCase().includes(q) || ROLES[o.role]?.label?.toLowerCase().includes(q)
-      );
+      return c.others?.some((o) => {
+        const fullName = getFullName(o).toLowerCase();
+        return fullName.includes(q) || ROLES[o.role]?.label?.toLowerCase().includes(q);
+      });
     });
 
   const activeConv  = conversations.find((c) => c.id === activeConvId);
@@ -273,7 +309,9 @@ export default function Messages() {
               {currentUser && (
                 <div className="flex items-center gap-2 text-xs text-gray-500 bg-white border border-gray-200 rounded-lg px-3 py-1.5">
                   <span className="w-2 h-2 rounded-full bg-green-400" />
-                  <span className="font-medium text-gray-700">{currentUser.name}</span>
+                  <span className="font-medium text-gray-700">
+                    {currentUser.prenom} {currentUser.nom}
+                  </span>
                   <span className={`px-1.5 py-0.5 rounded ${ROLES[currentUser.role]?.color}`}>
                     {ROLES[currentUser.role]?.label}
                   </span>
@@ -341,7 +379,7 @@ export default function Messages() {
                   </div>
                 </div>
 
-                {/* Liste conversations */}
+                {/* Conversations list */}
                 <div className="flex-1 overflow-y-auto">
                   {filteredConvs.length === 0 && (
                     <p className="text-center text-gray-400 text-xs py-6">
@@ -353,6 +391,7 @@ export default function Messages() {
                     if (!other) return null;
                     const liveUser = mergedUsers.find((u) => u.id === other.id);
                     const isActive = conv.id === activeConvId;
+                    const otherFullName = getFullName(other);
                     return (
                       <div
                         key={conv.id}
@@ -363,7 +402,7 @@ export default function Messages() {
                       >
                         <div className="relative">
                           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#2F5D9F] to-[#E55B2D] flex items-center justify-center text-white text-sm font-medium">
-                            {initials(other.name)}
+                            {initials(other)}
                           </div>
                           <span
                             className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white ${
@@ -373,7 +412,9 @@ export default function Messages() {
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center justify-between gap-2">
-                            <p className="truncate text-sm font-medium text-gray-800">{other.name}</p>
+                            <p className="truncate text-sm font-medium text-gray-800">
+                              {otherFullName}
+                            </p>
                             <span className="text-xs text-gray-400">
                               {formatTime(conv.lastMsg?.timestamp)}
                             </span>
@@ -400,17 +441,17 @@ export default function Messages() {
                 </div>
               </div>
 
-              {/* Zone chat */}
+              {/* Chat zone */}
               <div className="flex flex-1 flex-col min-w-0">
                 {activeOther ? (
                   <>
-                    {/* En-tête chat */}
+                    {/* Chat header */}
                     <div className="flex items-center gap-3 border-b border-gray-200 p-4">
                       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#2F5D9F] to-[#E55B2D] flex items-center justify-center text-white text-sm font-medium">
-                        {initials(activeOther.name)}
+                        {initials(activeOther)}
                       </div>
                       <div>
-                        <p className="font-medium text-gray-800">{activeOther.name}</p>
+                        <p className="font-medium text-gray-800">{getFullName(activeOther)}</p>
                         <p className="text-xs text-gray-500">{ROLES[activeOther.role]?.label}</p>
                       </div>
                     </div>
@@ -437,7 +478,6 @@ export default function Messages() {
                         );
                       })}
 
-                      {/* Typing indicator */}
                       {typing && (
                         <div className="flex justify-start">
                           <div className="bg-gray-100 rounded-2xl px-4 py-2 flex gap-1 items-center">
