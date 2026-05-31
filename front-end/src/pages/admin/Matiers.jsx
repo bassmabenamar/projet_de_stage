@@ -1,6 +1,7 @@
 // pages/admin/Matiers.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from '../../api';
 
 const COLOR_PALETTE = [
   '#2F5D9F', '#4A7CC2', '#E55B2D', '#16A34A', '#0D9488',
@@ -9,42 +10,163 @@ const COLOR_PALETTE = [
 
 export default function AdminSubjects() {
   const navigate = useNavigate();
-  const [subjects, setSubjects] = useState([
-    { id: '1', name: 'Mathematics', code: 'MATH', teacher: 'John Doe',   hours: 4, color: '#2F5D9F' },
-    { id: '2', name: 'Physics',     code: 'PHY',  teacher: 'Jane Smith', hours: 3, color: '#E55B2D' },
-    { id: '3', name: 'Chemistry',   code: 'CHEM', teacher: 'Dr. Brown',   hours: 4, color: '#16A34A' },
-    { id: '4', name: 'Biology',     code: 'BIO',  teacher: 'Sarah Lee',   hours: 3, color: '#0D9488' },
-    { id: '5', name: 'History',     code: 'HIST', teacher: 'Mike Wilson', hours: 2, color: '#A16207' },
-  ]);
-
+  const [subjects, setSubjects] = useState([]);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [search, setSearch] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Save subjects to global storage for other components
-  const saveSubject = (data) => {
-    if (data.id) {
-      setSubjects(prev => prev.map(s => s.id === data.id ? data : s));
-    } else {
-      setSubjects(prev => [...prev, { ...data, id: Date.now().toString() }]);
+  // Charger les matières depuis l'API
+  useEffect(() => {
+    fetchSubjects();
+  }, []);
+
+  const fetchSubjects = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('/matieres');
+      console.log('API Response:', response.data);
+      
+      // Gérer différents formats de réponse
+      let subjectsData = [];
+      if (response.data.data) {
+        subjectsData = response.data.data;
+      } else if (Array.isArray(response.data)) {
+        subjectsData = response.data;
+      } else if (response.data.matieres) {
+        subjectsData = response.data.matieres;
+      } else {
+        subjectsData = [];
+      }
+      
+      setSubjects(subjectsData);
+      setError(null);
+    } catch (err) {
+      console.error('Erreur lors du chargement des matières:', err);
+      setError('Impossible de charger les matières. Veuillez réessayer plus tard.');
+      setSubjects([]);
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Make subjects available globally
+  const saveSubject = async (data) => {
+    try {
+      let response;
+      
+      // Vérifier si c'est une mise à jour ou une création
+      if (data.id && !data.id.toString().startsWith('1')) {
+        // Mise à jour
+        console.log('Updating subject with ID:', data.id);
+        response = await api.put(`/matieres/${data.id}`, data);
+        
+        setSubjects(prev => prev.map(s => 
+          s.id === (response.data.matiere?.id || response.data.id) 
+            ? (response.data.matiere || response.data) 
+            : s
+        ));
+      } else {
+        // Création - ne pas envoyer d'ID
+        console.log('Creating new subject');
+        const { id, ...newData } = data;
+        response = await api.post('/matieres', newData);
+        
+        setSubjects(prev => [...prev, response.data.matiere || response.data]);
+      }
+      
+      return { success: true, data: response.data };
+    } catch (err) {
+      console.error('Erreur lors de la sauvegarde:', err);
+      console.error('Erreur détaillée:', err.response?.data);
+      
+      let errorMessage = 'Erreur lors de la sauvegarde';
+      if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      }
+      if (err.response?.data?.errors) {
+        errorMessage = Object.values(err.response.data.errors).flat().join(', ');
+      }
+      
+      return { 
+        success: false, 
+        error: errorMessage
+      };
+    }
+  };
+
+  const deleteSubject = async (id) => {
+    try {
+      await api.delete(`/matieres/${id}`);
+      setSubjects(prev => prev.filter(s => s.id !== id));
+      return { success: true };
+    } catch (err) {
+      console.error('Erreur lors de la suppression:', err);
+      return { 
+        success: false, 
+        error: err.response?.data?.message || 'Erreur lors de la suppression' 
+      };
+    }
+  };
+
+  // Rendre les fonctions disponibles globalement pour SubjectFormPage
   if (typeof window !== 'undefined') {
-    window.subjectsData = { subjects, saveSubject };
+    window.subjectsData = { 
+      subjects, 
+      saveSubject: async (data) => {
+        const result = await saveSubject(data);
+        if (result.success) {
+          await fetchSubjects(); // Recharger après sauvegarde
+        }
+        return result;
+      },
+      deleteSubject
+    };
   }
 
-  const totalHours = subjects.reduce((s, x) => s + x.hours, 0);
-  const filtered = subjects.filter(s =>
-    s.name.toLowerCase().includes(search.toLowerCase()) ||
-    s.code.toLowerCase().includes(search.toLowerCase()) ||
-    s.teacher.toLowerCase().includes(search.toLowerCase())
-  );
+  const totalHours = Array.isArray(subjects) ? subjects.reduce((s, x) => s + (parseInt(x.heures) || 0), 0) : 0;
+  
+  const filtered = Array.isArray(subjects) ? subjects.filter(s =>
+    s.nom?.toLowerCase().includes(search.toLowerCase()) ||
+    s.code?.toLowerCase().includes(search.toLowerCase()) ||
+    s.enseignant?.toLowerCase().includes(search.toLowerCase())
+  ) : [];
 
-  const handleDelete = () => {
-    setSubjects(prev => prev.filter(s => s.id !== deleteTarget.id));
-    setDeleteTarget(null);
+  const handleDelete = async () => {
+    const result = await deleteSubject(deleteTarget.id);
+    if (result.success) {
+      setDeleteTarget(null);
+    } else {
+      alert(result.error);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto"></div>
+          <p className="mt-4 text-slate-600">Chargement des matières...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+        <svg className="w-12 h-12 mx-auto text-red-500 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <p className="text-red-600 mb-4">{error}</p>
+        <button
+          onClick={fetchSubjects}
+          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+        >
+          Réessayer
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -72,7 +194,7 @@ export default function AdminSubjects() {
             />
           </div>
           <button
-            onClick={() => navigate('/subjects/nouveau')}
+            onClick={() => navigate('/matieres/nouveau')}
             className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-white rounded-xl whitespace-nowrap transition-opacity hover:opacity-90"
             style={{ background: '#E55B2D' }}
           >
@@ -96,51 +218,50 @@ export default function AdminSubjects() {
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Enseignant</th>
                 <th className="px-4 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">H/semaine</th>
                 <th className="px-4 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
-              </tr>
+               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-4 py-10 text-center text-sm text-slate-400">
                     Aucune matière trouvée.
-                  </td>
+                   </td>
                 </tr>
               ) : filtered.map(subject => (
                 <tr key={subject.id} className="border-b border-slate-50 hover:bg-slate-50/60 transition-colors">
                   <td className="px-4 py-3">
-                    <div className="w-6 h-6 rounded-lg border border-slate-200 shadow-sm" style={{ backgroundColor: subject.color }} />
-                  </td>
+                    <div className="w-6 h-6 rounded-lg border border-slate-200 shadow-sm" style={{ backgroundColor: subject.couleur || COLOR_PALETTE[0] }} />
+                   </td>
                   <td className="px-4 py-3">
                     <button
-                      onClick={() => navigate(`/subjects/${subject.id}`, { state: { subject } })}
+                      onClick={() => navigate(`/matieres/${subject.id}`, { state: { subject } })}
                       className="font-semibold hover:text-orange-600 transition-colors"
                       style={{ color: '#1e3a5f' }}
                     >
-                      {subject.name}
+                      {subject.nom}
                     </button>
-                  </td>
+                   </td>
                   <td className="px-4 py-3">
                     <span
                       className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-bold tracking-wide"
-                      style={{ backgroundColor: subject.color + '1A', color: subject.color }}
+                      style={{ backgroundColor: (subject.couleur || COLOR_PALETTE[0]) + '1A', color: subject.couleur || COLOR_PALETTE[0] }}
                     >
                       {subject.code}
                     </span>
-                  </td>
-                  <td className="px-4 py-3 text-slate-500 text-sm">{subject.teacher}</td>
+                   </td>
+                  <td className="px-4 py-3 text-slate-500 text-sm">{subject.enseignant}</td>
                   <td className="px-4 py-3 text-right">
                     <span className="inline-flex items-center justify-end gap-1.5 text-sm font-semibold" style={{ color: '#1e3a5f' }}>
                       <svg className="w-3.5 h-3.5" fill="none" stroke="#E55B2D" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      {subject.hours}h
+                      {subject.heures}h
                     </span>
-                  </td>
+                   </td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-1">
-                     
                       <button
-                        onClick={() => navigate(`/subjects/modifier/${subject.id}`, { state: { subject } })}
+                        onClick={() => navigate(`/matieres/modifier/${subject.id}`, { state: { subject } })}
                         className="p-1.5 rounded-lg hover:bg-orange-50 transition-colors"
                         style={{ color: '#E55B2D' }}
                         title="Modifier"
@@ -159,7 +280,7 @@ export default function AdminSubjects() {
                         </svg>
                       </button>
                     </div>
-                  </td>
+                   </td>
                 </tr>
               ))}
             </tbody>
@@ -195,7 +316,7 @@ export default function AdminSubjects() {
             </div>
             <p className="text-sm text-slate-500 mb-6 leading-relaxed">
               Êtes-vous sûr de vouloir supprimer{' '}
-              <strong style={{ color: '#1e3a5f' }}>"{deleteTarget.name}"</strong> ?{' '}
+              <strong style={{ color: '#1e3a5f' }}>"{deleteTarget.nom}"</strong> ?{' '}
               Cette action est irréversible.
             </p>
             <div className="flex justify-end gap-3">

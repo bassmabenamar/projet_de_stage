@@ -1,6 +1,7 @@
 // pages/admin/ActivityFormPage.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import api from '../../api';
 
 const inputCls = (error) =>
   `w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none transition-all bg-white ${
@@ -36,19 +37,20 @@ export default function ActivityFormPage() {
   const navigate = useNavigate();
   const { id } = useParams();
   const location = useLocation();
-  const isEdit = !!id;
+  const isEdit = !!id && id !== 'nouveau';
+  const [saving, setSaving] = useState(false);
 
   const [form, setForm] = useState({
-    id: '',
+    id: null,
     nom: '',
     code: '',
-    dateDebut: '',
-    dateFin: '',
+    date_debut: '',
+    date_fin: '',
     prix: '',
     lieu: '',
     description: '',
     responsable: '',
-    heuresHebdomadaires: 2,
+    heures_hebdomadaires: 2,
     statut: 'Actif',
     image: null,
     imagePreview: '',
@@ -59,17 +61,29 @@ export default function ActivityFormPage() {
 
   useEffect(() => {
     if (isEdit) {
-      const activity = location.state?.activity || window.activitiesData?.activites.find(a => a.id === id);
+      const activity = location.state?.activity || window.activitiesData?.activites?.find(a => a.id == id);
       if (activity) {
         setForm({
-          ...activity,
+          id: activity.id,
+          nom: activity.nom || '',
+          code: activity.code || '',
+          // Formater les dates pour l'input type="date" (YYYY-MM-DD)
+          date_debut: activity.date_debut ? activity.date_debut.split('T')[0] : '',
+          date_fin: activity.date_fin ? activity.date_fin.split('T')[0] : '',
+          prix: activity.prix || '',
+          lieu: activity.lieu || '',
+          description: activity.description || '',
+          responsable: activity.responsable || '',
+          heures_hebdomadaires: activity.heures_hebdomadaires || 2,
+          statut: activity.statut || 'Actif',
+          image: null,
           imagePreview: activity.image || '',
         });
       }
     }
   }, [isEdit, id, location]);
 
-  const set = (key, val) => {
+  const setField = (key, val) => {
     setForm(f => ({ ...f, [key]: val }));
     if (errors[key]) setErrors(e => ({ ...e, [key]: '' }));
   };
@@ -81,16 +95,16 @@ export default function ActivityFormPage() {
     if (!form.nom.trim()) e.nom = 'Le nom est obligatoire.';
     if (!form.code.trim()) e.code = 'Le code est obligatoire.';
     if (!form.lieu.trim()) e.lieu = 'Le lieu est obligatoire.';
-    if (form.dateDebut && form.dateFin && form.dateFin < form.dateDebut)
-      e.dateFin = 'La date de fin doit être après la date de début.';
+    if (form.date_debut && form.date_fin && form.date_fin < form.date_debut)
+      e.date_fin = 'La date de fin doit être après la date de début.';
     if (form.prix !== '' && Number(form.prix) < 0)
       e.prix = 'Le prix ne peut pas être négatif.';
-    if (form.heuresHebdomadaires < 1 || form.heuresHebdomadaires > 40)
-      e.heuresHebdomadaires = 'Entre 1 et 40 heures.';
+    if (form.heures_hebdomadaires < 1 || form.heures_hebdomadaires > 40)
+      e.heures_hebdomadaires = 'Entre 1 et 40 heures.';
     return e;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setTouched({ nom: true, code: true, lieu: true });
     const e = validate();
     if (Object.keys(e).length > 0) {
@@ -102,23 +116,55 @@ export default function ActivityFormPage() {
       return;
     }
 
+    setSaving(true);
+
+    // Préparer les données pour l'API
     const activityData = {
-      ...form,
-      id: isEdit ? form.id : Date.now().toString(),
+      nom: form.nom,
       code: form.code.toUpperCase(),
-      image: form.imagePreview || '',
+      date_debut: form.date_debut || null,
+      date_fin: form.date_fin || null,
+      prix: form.prix === '' || form.prix === null ? null : parseFloat(form.prix),
+      lieu: form.lieu,
+      description: form.description || null,
+      responsable: form.responsable || null,
+      heures_hebdomadaires: parseInt(form.heures_hebdomadaires),
+      statut: form.statut,
+      image: form.imagePreview || null,
     };
 
-    if (window.activitiesData) {
-      window.activitiesData.saveActivity(activityData);
+    // Ajouter l'ID seulement si c'est une modification
+    if (isEdit && form.id) {
+      activityData.id = form.id;
     }
 
-    navigate('/activites');
+    console.log('Sending data:', activityData); // Debug
+
+    try {
+      if (window.activitiesData && window.activitiesData.saveActivity) {
+        const result = await window.activitiesData.saveActivity(activityData);
+        if (result.success) {
+          navigate('/activites');
+        } else {
+          alert(result.error || 'Erreur lors de la sauvegarde');
+        }
+      } else {
+        console.warn('window.activitiesData.saveActivity non disponible');
+        navigate('/activites');
+      }
+    } catch (error) {
+      console.error('Erreur lors de la soumission:', error);
+      alert('Une erreur est survenue. Veuillez réessayer.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
-    if (file) setForm(f => ({ ...f, image: file, imagePreview: URL.createObjectURL(file) }));
+    if (file) {
+      setForm(f => ({ ...f, image: file, imagePreview: URL.createObjectURL(file) }));
+    }
   };
 
   const missingCount = [!form.nom.trim(), !form.code.trim(), !form.lieu.trim()].filter(Boolean).length;
@@ -145,7 +191,7 @@ export default function ActivityFormPage() {
         </div>
       </div>
 
-      {/* Rest of your form remains the same */}
+      {/* Form */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left column - 2/3 width */}
         <div className="lg:col-span-2 space-y-5">
@@ -161,7 +207,7 @@ export default function ActivityFormPage() {
                   <input
                     className={inputCls(touched.nom && errors.nom)}
                     value={form.nom}
-                    onChange={e => set('nom', e.target.value)}
+                    onChange={e => setField('nom', e.target.value)}
                     onBlur={() => touch('nom')}
                     placeholder="Ex: Camp de Basketball"
                   />
@@ -173,7 +219,7 @@ export default function ActivityFormPage() {
                   <input
                     className={inputCls(touched.code && errors.code)}
                     value={form.code}
-                    onChange={e => set('code', e.target.value.toUpperCase())}
+                    onChange={e => setField('code', e.target.value.toUpperCase())}
                     onBlur={() => touch('code')}
                     placeholder="BSK"
                     maxLength={6}
@@ -185,19 +231,19 @@ export default function ActivityFormPage() {
                 <input
                   className={inputCls(false)}
                   type="date"
-                  value={form.dateDebut}
-                  onChange={e => set('dateDebut', e.target.value)}
+                  value={form.date_debut}
+                  onChange={e => setField('date_debut', e.target.value)}
                 />
               </Field>
 
-              <Field label="Date de fin" error={touched.dateFin && errors.dateFin}>
-                <div data-error={!!(touched.dateFin && errors.dateFin)}>
+              <Field label="Date de fin" error={touched.date_fin && errors.date_fin}>
+                <div data-error={!!(touched.date_fin && errors.date_fin)}>
                   <input
-                    className={inputCls(touched.dateFin && errors.dateFin)}
+                    className={inputCls(touched.date_fin && errors.date_fin)}
                     type="date"
-                    value={form.dateFin}
-                    onChange={e => set('dateFin', e.target.value)}
-                    onBlur={() => touch('dateFin')}
+                    value={form.date_fin}
+                    onChange={e => setField('date_fin', e.target.value)}
+                    onBlur={() => touch('date_fin')}
                   />
                 </div>
               </Field>
@@ -207,7 +253,7 @@ export default function ActivityFormPage() {
                   <input
                     className={inputCls(touched.lieu && errors.lieu)}
                     value={form.lieu}
-                    onChange={e => set('lieu', e.target.value)}
+                    onChange={e => setField('lieu', e.target.value)}
                     onBlur={() => touch('lieu')}
                     placeholder="Ex: Gymnase A"
                   />
@@ -218,7 +264,7 @@ export default function ActivityFormPage() {
                 <input
                   className={inputCls(false)}
                   value={form.responsable}
-                  onChange={e => set('responsable', e.target.value)}
+                  onChange={e => setField('responsable', e.target.value)}
                   placeholder="Ex: Coach Mike"
                 />
               </Field>
@@ -235,7 +281,7 @@ export default function ActivityFormPage() {
               className={inputCls(false)}
               rows={5}
               value={form.description}
-              onChange={e => set('description', e.target.value)}
+              onChange={e => setField('description', e.target.value)}
               placeholder="Décrivez l'activité, les objectifs, le public cible..."
               style={{ resize: 'vertical' }}
             />
@@ -252,9 +298,11 @@ export default function ActivityFormPage() {
                 <div className="relative shrink-0">
                   <img src={form.imagePreview} alt="Aperçu" className="w-28 h-28 rounded-xl object-cover border border-slate-200" />
                   <button
-                    onClick={() => setForm(f => ({ ...f, image: null, imagePreview: '' }))}
-                    className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white text-xs shadow"
-                  >×</button>
+                    onClick={() => setField('imagePreview', '')}
+                    className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white text-xs shadow hover:bg-red-600 transition-colors"
+                  >
+                    ×
+                  </button>
                 </div>
               ) : (
                 <div className="w-28 h-28 rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center bg-slate-50 shrink-0">
@@ -288,9 +336,13 @@ export default function ActivityFormPage() {
             </h2>
             <div className="space-y-4">
               <Field label="Statut">
-                <select className={inputCls(false)} value={form.statut} onChange={e => set('statut', e.target.value)}>
-                  <option>Actif</option>
-                  <option>Inactif</option>
+                <select 
+                  className={inputCls(false)} 
+                  value={form.statut} 
+                  onChange={e => setField('statut', e.target.value)}
+                >
+                  <option value="Actif">Actif</option>
+                  <option value="Inactif">Inactif</option>
                 </select>
               </Field>
 
@@ -300,24 +352,25 @@ export default function ActivityFormPage() {
                     className={inputCls(touched.prix && errors.prix)}
                     type="number"
                     min="0"
+                    step="0.01"
                     value={form.prix}
-                    onChange={e => set('prix', e.target.value)}
+                    onChange={e => setField('prix', e.target.value)}
                     onBlur={() => touch('prix')}
                     placeholder="0 = Gratuit"
                   />
                 </div>
               </Field>
 
-              <Field label="Heures / semaine" error={touched.heuresHebdomadaires && errors.heuresHebdomadaires}>
-                <div data-error={!!(touched.heuresHebdomadaires && errors.heuresHebdomadaires)} className="flex items-center gap-3">
+              <Field label="Heures / semaine" error={touched.heures_hebdomadaires && errors.heures_hebdomadaires}>
+                <div data-error={!!(touched.heures_hebdomadaires && errors.heures_hebdomadaires)} className="flex items-center gap-3">
                   <input
-                    className={inputCls(touched.heuresHebdomadaires && errors.heuresHebdomadaires)}
+                    className={inputCls(touched.heures_hebdomadaires && errors.heures_hebdomadaires)}
                     type="number"
                     min="1"
                     max="40"
-                    value={form.heuresHebdomadaires}
-                    onChange={e => set('heuresHebdomadaires', parseInt(e.target.value) || 1)}
-                    onBlur={() => touch('heuresHebdomadaires')}
+                    value={form.heures_hebdomadaires}
+                    onChange={e => setField('heures_hebdomadaires', parseInt(e.target.value) || 1)}
+                    onBlur={() => touch('heures_hebdomadaires')}
                   />
                   <span className="text-sm text-slate-400 whitespace-nowrap">h / sem</span>
                 </div>
@@ -364,10 +417,15 @@ export default function ActivityFormPage() {
                   </span>
                 </div>
                 {form.lieu && <p className="text-xs text-slate-400 mt-1.5">📍 {form.lieu}</p>}
-                {form.prix
-                  ? <p className="text-xs font-semibold mt-1" style={{ color: '#1e3a5f' }}>{form.prix} DH</p>
-                  : <span className="text-xs font-semibold px-2 py-0.5 rounded-full mt-1 inline-block" style={{ background: '#e0f2fe', color: '#0284c7' }}>Gratuit</span>
-                }
+                {form.prix && parseFloat(form.prix) > 0 ? (
+                  <p className="text-xs font-semibold mt-1" style={{ color: '#1e3a5f' }}>
+                    {parseFloat(form.prix).toFixed(2)} DH
+                  </p>
+                ) : form.prix === '0' || form.prix === 0 ? (
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full mt-1 inline-block" style={{ background: '#e0f2fe', color: '#0284c7' }}>
+                    Gratuit
+                  </span>
+                ) : null}
               </div>
             </div>
           </section>
@@ -376,13 +434,23 @@ export default function ActivityFormPage() {
           <div className="flex flex-col gap-3">
             <button
               onClick={handleSubmit}
-              className="w-full py-3 text-sm font-bold text-white rounded-xl flex items-center justify-center gap-2 transition-opacity hover:opacity-90"
+              disabled={saving}
+              className="w-full py-3 text-sm font-bold text-white rounded-xl flex items-center justify-center gap-2 transition-opacity hover:opacity-90 disabled:opacity-50"
               style={{ background: '#E55B2D' }}
             >
-              <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-              </svg>
-              {isEdit ? 'Enregistrer les modifications' : "Créer l'activité"}
+              {saving ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                  {isEdit ? 'Enregistrement...' : 'Création...'}
+                </>
+              ) : (
+                <>
+                  <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                  </svg>
+                  {isEdit ? 'Enregistrer les modifications' : "Créer l'activité"}
+                </>
+              )}
             </button>
 
             {missingCount > 0 && Object.keys(errors).length > 0 && (
@@ -393,7 +461,8 @@ export default function ActivityFormPage() {
 
             <button
               onClick={() => navigate('/activites')}
-              className="w-full py-3 text-sm font-semibold text-slate-600 bg-slate-100 rounded-xl hover:bg-slate-200 transition-colors"
+              disabled={saving}
+              className="w-full py-3 text-sm font-semibold text-slate-600 bg-slate-100 rounded-xl hover:bg-slate-200 transition-colors disabled:opacity-50"
             >
               Annuler
             </button>

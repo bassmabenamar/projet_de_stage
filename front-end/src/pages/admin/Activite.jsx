@@ -1,6 +1,7 @@
 // pages/admin/Activite.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from '../../api';
 
 const AVATAR_COLORS = ['#4f46e5','#0891b2','#16a34a','#E55B2D','#7c3aed','#0f766e','#dc2626','#a16207'];
 function getAvatarColor(name) { let h = 0; for (let c of name) h += c.charCodeAt(0); return AVATAR_COLORS[h % AVATAR_COLORS.length]; }
@@ -10,39 +11,161 @@ export default function AdminActivities() {
   const navigate = useNavigate();
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [activites, setActivites] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const [activites, setActivites] = useState([
-    { id: '1', nom: 'Camp de Basketball', code: 'BSK', dateDebut: '2024-06-01', dateFin: '2024-06-15', prix: '150', lieu: 'Gymnase A', description: "Camp d'été de basketball pour débutants et intermédiaires", image: '', responsable: 'Coach Mike', heuresHebdomadaires: 3, statut: 'Actif' },
-    { id: '2', nom: 'Cours de Natation', code: 'NAT', dateDebut: '2024-07-01', dateFin: '2024-07-20', prix: '200', lieu: 'Piscine Municipale', description: 'Apprenez à nager avec des instructeurs professionnels', image: '', responsable: 'Coach Sarah', heuresHebdomadaires: 2, statut: 'Actif' },
-    { id: '3', nom: "Club d'Échecs", code: 'ECH', dateDebut: '2024-09-01', dateFin: '2024-12-20', prix: '', lieu: 'Salle B12', description: 'Développez votre stratégie et logique avec les échecs', image: '', responsable: 'M. Robert', heuresHebdomadaires: 2, statut: 'Inactif' },
-  ]);
+  // Charger les activités depuis l'API
+  useEffect(() => {
+    fetchActivites();
+  }, []);
 
-  // Save activities to global storage
-  const saveActivity = (data) => {
-    if (data.id) {
-      setActivites(prev => prev.map(a => a.id === data.id ? data : a));
-    } else {
-      setActivites(prev => [...prev, { ...data, id: Date.now().toString() }]);
+  const fetchActivites = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('/activites');
+      console.log('API Response:', response.data);
+      
+      // Gérer différents formats de réponse
+      let activitesData = [];
+      if (response.data.data) {
+        activitesData = response.data.data;
+      } else if (Array.isArray(response.data)) {
+        activitesData = response.data;
+      } else if (response.data.activites) {
+        activitesData = response.data.activites;
+      } else {
+        activitesData = [];
+      }
+      
+      setActivites(activitesData);
+      setError(null);
+    } catch (err) {
+      console.error('Erreur lors du chargement des activités:', err);
+      setError('Impossible de charger les activités. Veuillez réessayer plus tard.');
+      setActivites([]);
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Make activities available globally
+  const saveActivity = async (data) => {
+    try {
+      let response;
+      
+      // Vérifier si c'est une mise à jour ou une création
+      if (data.id && !data.id.toString().startsWith('1')) {
+        // Mise à jour
+        console.log('Updating activity with ID:', data.id);
+        response = await api.put(`/activites/${data.id}`, data);
+        
+        setActivites(prev => prev.map(a => 
+          a.id === (response.data.activity?.id || response.data.id) 
+            ? (response.data.activity || response.data) 
+            : a
+        ));
+      } else {
+        // Création - ne pas envoyer d'ID
+        console.log('Creating new activity');
+        const { id, ...newData } = data;
+        response = await api.post('/activites', newData);
+        
+        setActivites(prev => [...prev, response.data.activity || response.data]);
+      }
+      
+      return { success: true, data: response.data };
+    } catch (err) {
+      console.error('Erreur lors de la sauvegarde:', err);
+      console.error('Erreur détaillée:', err.response?.data);
+      
+      let errorMessage = 'Erreur lors de la sauvegarde';
+      if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      }
+      if (err.response?.data?.errors) {
+        errorMessage = Object.values(err.response.data.errors).flat().join(', ');
+      }
+      
+      return { 
+        success: false, 
+        error: errorMessage
+      };
+    }
+  };
+
+  const deleteActivity = async (id) => {
+    try {
+      await api.delete(`/activites/${id}`);
+      setActivites(prev => prev.filter(a => a.id !== id));
+      return { success: true };
+    } catch (err) {
+      console.error('Erreur lors de la suppression:', err);
+      return { 
+        success: false, 
+        error: err.response?.data?.message || 'Erreur lors de la suppression' 
+      };
+    }
+  };
+
+  // Rendre les fonctions disponibles globalement pour ActivityFormPage
   if (typeof window !== 'undefined') {
-    window.activitiesData = { activites, saveActivity };
+    window.activitiesData = { 
+      activites, 
+      saveActivity: async (data) => {
+        const result = await saveActivity(data);
+        if (result.success) {
+          await fetchActivites(); // Recharger après sauvegarde
+        }
+        return result;
+      },
+      deleteActivity
+    };
   }
 
-  const filtered = activites.filter(a =>
-    a.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    a.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    a.lieu.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filtered = Array.isArray(activites) ? activites.filter(a =>
+    a.nom?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    a.code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    a.lieu?.toLowerCase().includes(searchTerm.toLowerCase())
+  ) : [];
 
-  const totalH = activites.reduce((s, a) => s + a.heuresHebdomadaires, 0);
+  const totalH = Array.isArray(activites) ? activites.reduce((s, a) => s + (parseInt(a.heures_hebdomadaires) || 0), 0) : 0;
 
-  const handleDelete = () => {
-    setActivites(prev => prev.filter(a => a.id !== deleteTarget.id));
-    setDeleteTarget(null);
+  const handleDelete = async () => {
+    const result = await deleteActivity(deleteTarget.id);
+    if (result.success) {
+      setDeleteTarget(null);
+    } else {
+      alert(result.error);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto"></div>
+          <p className="mt-4 text-slate-600">Chargement des activités...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+        <svg className="w-12 h-12 mx-auto text-red-500 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <p className="text-red-600 mb-4">{error}</p>
+        <button
+          onClick={fetchActivites}
+          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+        >
+          Réessayer
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -118,7 +241,7 @@ export default function AdminActivities() {
                   className="text-xs font-semibold px-3 py-1 rounded-full"
                   style={a.statut === 'Actif' ? { background: '#dcfce7', color: '#16a34a' } : { background: '#fee2e2', color: '#dc2626' }}
                 >
-                  {a.statut}
+                  {a.statut || 'Actif'}
                 </span>
               </div>
 
@@ -127,7 +250,7 @@ export default function AdminActivities() {
               <div className="space-y-1.5 mb-3 text-xs text-slate-500">
                 <div className="flex items-center gap-2">
                   <svg width="13" height="13" fill="none" stroke="#E55B2D" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                  {a.dateDebut} → {a.dateFin}
+                  {a.date_debut} → {a.date_fin}
                 </div>
                 <div className="flex items-center gap-2">
                   <svg width="13" height="13" fill="none" stroke="#E55B2D" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
@@ -152,10 +275,9 @@ export default function AdminActivities() {
               <div className="flex items-center justify-between pt-3 border-t border-slate-100">
                 <div className="flex items-center gap-1.5 text-xs text-slate-500">
                   <svg width="13" height="13" fill="none" stroke="#E55B2D" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                  <span className="font-bold" style={{ color: '#1e3a5f' }}>{a.heuresHebdomadaires}h</span>/semaine
+                  <span className="font-bold" style={{ color: '#1e3a5f' }}>{a.heures_hebdomadaires}h</span>/semaine
                 </div>
                 <div className="flex gap-1">
-                
                   <button
                     onClick={() => navigate(`/activites/modifier/${a.id}`, { state: { activity: a } })}
                     className="p-1.5 rounded-lg hover:bg-orange-50 transition-colors"
@@ -179,7 +301,7 @@ export default function AdminActivities() {
       </div>
 
       {/* Empty state */}
-      {filtered.length === 0 && (
+      {filtered.length === 0 && !loading && (
         <div className="text-center py-16 bg-white rounded-2xl border border-slate-100">
           <svg className="w-14 h-14 mx-auto text-slate-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
