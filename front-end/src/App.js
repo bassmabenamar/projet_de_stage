@@ -1,10 +1,10 @@
-import './A';
-import Profile from './Etudiant/Profile';
+// src/App.js
+
+import React from "react";
+import AppRoute from "./AppRoute";
+
 function App() {
-  return (
-    <div >
-      <Profile/>
-     </div>)
+  return <AppRoute />;
 }
 
 export default App;
