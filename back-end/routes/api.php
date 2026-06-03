@@ -97,7 +97,7 @@ Route::get('/classes', [HomeworkController::class, 'classes']);
 
         Route::get('/timetable', [TimeTableController::class, 'index']);
       
-        Route::get('/announcements', [AnnouncementController::class, 'index']);
+       
 
 
         Route::get('/tasks', [TaskController::class, 'index']);
@@ -122,4 +122,13 @@ Route::delete('/files/{id}', [FileController::class, 'destroy']);
 
 Route::get('/resources/stats', [StatsController::class, 'index']);
 Route::get('/dashboard/advanced', [DashboardController::class, 'index']);
+
+
+
+    Route::get('/announcements', [AnnouncementController::class, 'index']);
+    Route::post('/announcements', [AnnouncementController::class, 'store']);
+    Route::delete('/announcements/{id}', [AnnouncementController::class, 'destroy']);
+
+    Route::post('/announcements/{id}/read', [AnnouncementController::class, 'markAsRead']);
+    Route::post('/announcements/read-all', [AnnouncementController::class, 'markAllAsRead']);
 });

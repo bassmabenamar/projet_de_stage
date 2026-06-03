@@ -57,23 +57,73 @@ class DashboardController extends Controller
 
         return response()->json($announcement);
     }
-    public function index()
+   public function index()
 {
-    return response()->json([
-        "teacherName" => auth()->user()->name ?? "Teacher",
+    $teacher = auth()->user();
 
-        "performance" => [
-            "averageGrade" => 14.8,
-            "attendanceRate" => 94,
-            "homeworkCompletion" => 87,
-            "studentSatisfaction" => 4.6
+    $classes = Classe::where(
+        'enseignant_id',
+        $teacher->id
+    )->get();
+
+    $students = Etudiant::whereIn(
+        'classe_id',
+        $classes->pluck('id')
+    )->count();
+
+    $homeworks = Devoir::where(
+        'enseignant_id',
+        $teacher->id
+    )->count();
+
+    return response()->json([
+        'teacher' => [
+            'id' => $teacher->id,
+            'firstName' => $teacher->name
         ],
 
-        "upcomingEvents" => [],
-        "recentSubmissions" => [],
-        "topPerformers" => [],
-        "pendingReviews" => [],
-        "classStats" => []
+        'stats' => [
+            'courses' => $classes->count(),
+            'students' => $students,
+            'pending_homeworks' => $homeworks,
+            'today_courses' => $classes->count()
+        ],
+
+        'schedule' => [
+            [
+                'time' => '09:00 AM',
+                'title' => 'Mathématiques',
+                'location' => 'Salle 101',
+                'active' => true,
+                'comingSoon' => false
+            ]
+        ],
+
+        'activities' => [
+            [
+                'id' => 'C1',
+                'name' => 'Math 1A',
+                'type' => 'Quiz',
+                'status' => 'EN COURS',
+                'date' => now()->format('d M Y'),
+                'progress' => 75
+            ]
+        ],
+
+        'announcements' => [
+            [
+                'category' => 'ADMINISTRATION',
+                'text' => 'Réunion pédagogique vendredi.',
+                'time' => 'Il y a 2 heures'
+            ]
+        ],
+
+        'tasks' => [
+            [
+                'id' => 1,
+                'label' => 'Corriger les examens'
+            ]
+        ]
     ]);
 }
 }
