@@ -36,6 +36,9 @@ export function Sidebar() {
     function Afiliere(){
       navigate("/ListeFiliere")
     }
+    function AClasseSelector(){
+      navigate("/ClasseSelector")
+    }
 
    const isFormateurRoute =
       location.pathname.startsWith("/ListeFormateurs") ||
@@ -65,6 +68,11 @@ export function Sidebar() {
       location.pathname.startsWith("/ListeFiliere") ||
       location.pathname.startsWith("/AjouterFiliere") ||
       location.pathname.startsWith("/ModifierFiliere");
+   
+   const isEmploiRoute =
+      location.pathname.startsWith("/ClasseSelector") ||
+      location.pathname.startsWith("/EmploiClasse");
+
 
     return (
         <div className="w-64 flex flex-col h-full bg-white border-r shadow-sm">
@@ -161,6 +169,19 @@ export function Sidebar() {
                   : "border-l-transparent text-[#2F5D9F]"}`}>
                <GraduationCap className="w-5 h-5" />
                Filières
+            </p>
+
+            {/* emploi du temps */}
+            <p onClick={AClasseSelector}
+               className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium w-full cursor-pointer transition-all duration-300 border-l-4
+                ${!isEmploiRoute
+                  ? "hover:translate-x-1 hover:shadow-md hover:text-[#2F5D9F] hover:bg-orange-50 hover:border-l-[#E55B2D]"
+                  : ""} 
+                ${isEmploiRoute
+                  ? "bg-[#E55B2D] text-white border-l-[#E55B2D]"
+                  : "border-l-transparent text-[#2F5D9F]"}`}>
+               <CalendarDays className="w-5 h-5" />
+               Emploi du temps
             </p>
 
             {/* Matières */}

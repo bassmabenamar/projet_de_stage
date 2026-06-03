@@ -102,7 +102,7 @@ export default function ListeClasses() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
-                           {classe.niveau_scolaire   ?.nom_niveau}
+                           {classe.niveau_scolaire?.nom_niveau}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">

@@ -12,6 +12,8 @@ use App\Models\Classe;
 use App\Models\Transport;
 use App\Models\Filiere;
 use App\Models\NiveauScolaire;
+use App\Models\Emploi;
+
 
 class User extends Authenticatable implements JWTSubject
 {
@@ -88,5 +90,9 @@ class User extends Authenticatable implements JWTSubject
     public function classesFormateur()
     {
         return $this->belongsToMany(Classe::class, 'class_formateur', 'formateur_id', 'classe_id');
+    }
+    public function emplois()
+    {
+        return $this->hasMany(Emploi::class);
     }
 }

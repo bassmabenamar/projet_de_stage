@@ -73,7 +73,7 @@ export default function ListeFiliere() {
 
       <div className="relative mb-5">
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-        <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Rechercher un étudiant..."className="w-full md:w-96 bg-slate-50 border border-gray-200 rounded-xl py-3 pl-12 pr-4 text-sm focus:bg-white focus:ring-2 focus:ring-[#E55B2D] focus:border-transparent transition-all outline-none"/>
+        <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Rechercher un filiere..."className="w-full md:w-96 bg-slate-50 border border-gray-200 rounded-xl py-3 pl-12 pr-4 text-sm focus:bg-white focus:ring-2 focus:ring-[#E55B2D] focus:border-transparent transition-all outline-none"/>
       </div>    
 
       <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">

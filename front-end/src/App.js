@@ -31,6 +31,9 @@ import ListeFiliere from "./ListeFiliere";
 import AjouterFiliere from "./AjouterFiliere";
 import ModifierFiliere from "./ModifierFiliere";
 
+import ClasseSelector from "./ClasseSelector";
+import EmploiClasse from "./EmploiClasse";
+
 import Login from "./Login";
 
 function App() {
@@ -45,6 +48,8 @@ function App() {
         <Route path="/Absences" element={<Absences />} />
         <Route path="/Notes" element={<Notes />} />
         <Route path="/Profile" element={<Profile />} />
+        <Route path="/ClasseSelector" element={<ClasseSelector />} />
+        <Route path="/EmploiClasse/:id" element={<EmploiClasse />} />
 
         <Route path="/ListeEtudiants" element={<ListeEtudiants />} />
         <Route path="/AjouterEtudiant" element={<AjouterEtudiant />} />
@@ -71,7 +76,7 @@ function App() {
         <Route path="/ModifierFiliere/:id" element={<ModifierFiliere />} />
       </Route>
     </Routes>
-    {/* <DetailsFormateur/> */}
+    {/* <ClasseSelector/> */}
     </div>
   );
 }

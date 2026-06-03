@@ -13,6 +13,8 @@ use App\Http\Controllers\NiveauScolaireController;
 use App\Http\Controllers\FiliereController;
 use App\Http\Controllers\SalleController;
 use App\Http\Controllers\FormateurController;
+use App\Http\Controllers\EmploiController;
+use App\Http\Controllers\MatiereController;
 
 /*
 |--------------------------------------------------------------------------
@@ -43,4 +45,7 @@ Route::middleware('auth:api')->get('/classes/{id}/formateurs',[ClasseController:
 Route::middleware('auth:api')->resource('/niveauscolaires', NiveauScolaireController::class);
 Route::middleware('auth:api')->resource('/filieres', FiliereController::class);
 Route::middleware('auth:api')->resource('/salles', SalleController::class);
+Route::middleware('auth:api')->resource('/emplois', EmploiController::class);
+Route::middleware('auth:api')->resource('/matieres', MatiereController::class);
+Route::middleware('auth:api')->get('/emplois/classe/{id}',[EmploiController::class, 'index']);
 Route::middleware('auth:api')->get('/stats/classes-by-niveau',[ClasseController::class, 'classesByNiveau']);

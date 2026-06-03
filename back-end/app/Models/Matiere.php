@@ -4,16 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Classe;
 use App\Models\Emploi;
 
-class Salle extends Model
+class Matiere extends Model
 {
     use HasFactory;
-
-    public function classe(){
-        return $this->hasOne(Classe::class);
-    }
     public function emplois()
     {
         return $this->hasMany(Emploi::class);

@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\Salle;
 use App\Models\Filiere;
 use App\Models\NiveauScolaire;
+use App\Models\Emploi;
 
 class Classe extends Model
 {
@@ -34,5 +35,9 @@ class Classe extends Model
     public function formateurs()
     {
         return $this->belongsToMany(User::class, 'class_formateur', 'classe_id', 'formateur_id');
+    }
+    public function emplois()
+    {
+        return $this->hasMany(Emploi::class);
     }
 }
