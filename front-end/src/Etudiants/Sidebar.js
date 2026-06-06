@@ -34,7 +34,7 @@ export default function Sidebar() {
         <div className="flex items-center gap-0.5">
           <img src="logoo.jpeg" alt="Logo" className="w-20 h-20" />
           <div>
-            <h1 className="text-lg font-bold" style={{ color: "#2F5D9F" }}>AMITY SCHOOL</h1>
+            <h1 className="text-lg font-bold" style={{ color: "#2F5D9F" }}>AMITY  INTERNATIONAL SCHOOL</h1>
             <p className="text-xs text-gray-500 font-medium">Étudiant</p>
           </div>
         </div>

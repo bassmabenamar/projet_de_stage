@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { motion } from 'framer-motion';
 import { 
   Calendar, MapPin, Users, ArrowRight, 
   Plus, Rocket, Globe, Search, Bell, RefreshCw, MoreVertical,
-  CheckCircle, Loader2, XCircle
+  CheckCircle, Loader2, XCircle, Filter, X
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from './Navbar';
@@ -17,6 +16,11 @@ const Activities = () => {
   const [registeredActivities, setRegisteredActivities] = useState([]);
   const [activeTab, setActiveTab] = useState('À venir');
   const [registeringId, setRegisteringId] = useState(null);
+  
+  // États pour le filtre par date
+  const [filterDate, setFilterDate] = useState('');
+  const [dateFilterType, setDateFilterType] = useState('exact');
+  const [showFilter, setShowFilter] = useState(false);
 
   useEffect(() => {
     fetchActivites();
@@ -46,33 +50,41 @@ const Activities = () => {
     }
   };
 
-  const handleRegister = async (activityId) => {
-    setRegisteringId(activityId);
-    try {
-      await api.post('/student/activity-register', { activity_id: activityId });
-      await fetchMyRegistrations();
-      alert('Inscription réussie !');
-    } catch (error) {
-      console.error('Erreur inscription:', error);
-      alert(error.response?.data?.message || 'Erreur lors de l\'inscription');
-    } finally {
-      setRegisteringId(null);
-    }
-  };
-
   const isRegistered = (activityId) => {
     return registeredActivities.some(reg => reg.activity_id === activityId);
   };
 
+  const handleViewDetails = (activityId) => {
+    navigate(`/activities/${activityId}`);
+  };
+
   const getFilteredActivities = () => {
     let filtered = [...activities];
+    
+    // Filtrer par onglet
     if (activeTab === 'Mes Inscriptions') {
       filtered = filtered.filter(act => isRegistered(act.id));
-    } else if (activeTab === 'Événements Passés') {
+    } else if (activeTab === 'Passés') {
       filtered = filtered.filter(act => new Date(act.date) < new Date());
-    } else {
+    } else if (activeTab === 'À venir') {
       filtered = filtered.filter(act => new Date(act.date) >= new Date());
     }
+    
+    // Filtrer par date sélectionnée
+    if (filterDate) {
+      const selectedDate = new Date(filterDate);
+      if (dateFilterType === 'before') {
+        filtered = filtered.filter(act => new Date(act.date) <= selectedDate);
+      } else if (dateFilterType === 'after') {
+        filtered = filtered.filter(act => new Date(act.date) >= selectedDate);
+      } else {
+        filtered = filtered.filter(act => {
+          const actDate = new Date(act.date).toDateString();
+          return actDate === selectedDate.toDateString();
+        });
+      }
+    }
+    
     return filtered;
   };
 
@@ -124,7 +136,7 @@ const Activities = () => {
             </div>
             
             <div className="flex bg-white/80 backdrop-blur-md p-1.5 rounded-[20px] border border-slate-100 shadow-sm overflow-x-auto max-w-full no-scrollbar">
-              {['À venir', 'Mes Inscriptions', 'Événements Passés'].map((tab) => (
+              {['À venir', 'Mes Inscriptions', 'Passés'].map((tab) => (
                 <motion.button 
                   key={tab}
                   whileHover={{ scale: 1.05 }}
@@ -138,6 +150,106 @@ const Activities = () => {
             </div>
           </motion.div>
 
+          {/* Filtre par Date */}
+          <motion.div variants={itemVars} className="mb-8">
+            <div className="bg-white rounded-2xl p-4 border border-slate-100">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <button
+                  onClick={() => setShowFilter(!showFilter)}
+                  className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-xl text-[#002366] font-bold text-sm"
+                >
+                  <Filter size={16} />
+                  {showFilter ? 'Masquer filtre' : 'Filtrer par date'}
+                </button>
+                
+                {filterDate && (
+                  <div className="flex items-center gap-2 bg-[#002366]/10 px-3 py-2 rounded-xl">
+                    <span className="text-xs font-bold text-[#002366]">
+                      {dateFilterType === 'before' ? '≤' : dateFilterType === 'after' ? '≥' : '='}
+                      {' '}{new Date(filterDate).toLocaleDateString('fr-FR')}
+                    </span>
+                    <button
+                      onClick={() => {
+                        setFilterDate('');
+                        setDateFilterType('exact');
+                      }}
+                      className="text-slate-400 hover:text-red-500"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                )}
+              </div>
+              
+              {showFilter && (
+                <div className="mt-4 pt-4 border-t border-slate-100">
+                  <div className="flex flex-wrap gap-4 items-end">
+                    <div className="flex-1 min-w-[200px]">
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
+                        Date
+                      </label>
+                      <input
+                        type="date"
+                        value={filterDate}
+                        onChange={(e) => setFilterDate(e.target.value)}
+                        className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#002366]/20"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
+                        Type
+                      </label>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setDateFilterType('exact')}
+                          className={`px-4 py-3 rounded-xl text-xs font-black transition-all ${
+                            dateFilterType === 'exact' 
+                              ? 'bg-[#002366] text-white' 
+                              : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                          }`}
+                        >
+                          Exact
+                        </button>
+                        <button
+                          onClick={() => setDateFilterType('before')}
+                          className={`px-4 py-3 rounded-xl text-xs font-black transition-all ${
+                            dateFilterType === 'before' 
+                              ? 'bg-[#002366] text-white' 
+                              : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                          }`}
+                        >
+                          Avant
+                        </button>
+                        <button
+                          onClick={() => setDateFilterType('after')}
+                          className={`px-4 py-3 rounded-xl text-xs font-black transition-all ${
+                            dateFilterType === 'after' 
+                              ? 'bg-[#002366] text-white' 
+                              : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                          }`}
+                        >
+                          Après
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <button
+                      onClick={() => {
+                        setFilterDate('');
+                        setDateFilterType('exact');
+                        setShowFilter(false);
+                      }}
+                      className="px-6 py-3 bg-red-50 text-red-600 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-red-100 transition-all"
+                    >
+                      Effacer
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </motion.div>
+
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-10">
             
             {/* HERO FEATURED CARD */}
@@ -145,6 +257,7 @@ const Activities = () => {
               <motion.div 
                 variants={itemVars}
                 className="col-span-1 lg:col-span-8 relative group cursor-pointer overflow-hidden rounded-[35px] md:rounded-[45px] h-[400px] md:h-[500px] shadow-2xl shadow-blue-900/5"
+                onClick={() => handleViewDetails(featured.id)}
               >
                 <motion.div 
                   className="absolute inset-0 bg-cover bg-center transition-transform duration-[1.5s] group-hover:scale-110"
@@ -164,24 +277,12 @@ const Activities = () => {
                     <div className="flex items-center gap-3"><MapPin size={20} className="text-orange-400"/> {featured?.lieu || "Amity School"}</div>
                     <div className="flex items-center gap-3"><Users size={20} className="text-orange-400"/> {featured?.places_restantes || 50} places</div>
                   </div>
-                  {!isRegistered(featured.id) && new Date(featured.date) >= new Date() && (
-                    <motion.button 
-                      whileHover={{ scale: 1.05, gap: '20px' }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => handleRegister(featured.id)}
-                      disabled={registeringId === featured.id}
-                      className="mt-8 md:mt-10 bg-orange-600 text-white px-8 md:px-10 py-4 md:py-5 rounded-[18px] md:rounded-[22px] font-black uppercase text-xs tracking-[0.25em] flex items-center gap-3 shadow-xl shadow-orange-600/30 transition-all disabled:opacity-50"
-                    >
-                      {registeringId === featured.id ? <Loader2 size={18} className="animate-spin" /> : <ArrowRight size={18} />}
-                      {registeringId === featured.id ? 'Inscription...' : "S'inscrire Maintenant"}
-                    </motion.button>
-                  )}
-                  {isRegistered(featured.id) && (
-                    <div className="mt-8 inline-flex items-center gap-2 bg-green-500/20 backdrop-blur-sm px-6 py-3 rounded-full">
-                      <CheckCircle size={18} className="text-green-400" />
-                      <span className="text-sm font-bold">Vous êtes inscrit à cet événement</span>
-                    </div>
-                  )}
+                  <div className="mt-8">
+                    <button className="bg-orange-600 text-white px-8 md:px-10 py-4 md:py-5 rounded-[18px] md:rounded-[22px] font-black uppercase text-xs tracking-[0.25em] flex items-center gap-3 shadow-xl shadow-orange-600/30 transition-all hover:scale-105">
+                      <ArrowRight size={18} />
+                      Voir les détails
+                    </button>
+                  </div>
                 </div>
               </motion.div>
             )}
@@ -198,7 +299,7 @@ const Activities = () => {
                       title={act.titre}
                       sub={`Ferme dans ${Math.ceil((new Date(act.date) - new Date()) / (1000 * 60 * 60 * 24))} jours`}
                       color="border-orange-500"
-                      onClick={() => navigate(`/activities/${act.id}`)}
+                      onClick={() => handleViewDetails(act.id)}
                     />
                   ))}
                 </div>
@@ -228,6 +329,7 @@ const Activities = () => {
               <motion.div variants={itemVars} className="flex justify-between items-center mb-8 md:mb-10">
                 <h3 className="text-2xl md:text-3xl font-black text-[#002366] tracking-tight">
                   {activeTab === 'Mes Inscriptions' ? 'Mes Inscriptions' : 'Toutes les Activités'}
+                  {filterDate && ` (filtré)`}
                 </h3>
                 <div className="flex gap-4">
                   <button onClick={fetchActivites} className="p-3 md:p-4 bg-white border border-slate-100 rounded-2xl text-slate-400 hover:text-[#002366] transition-all shadow-sm">
@@ -249,9 +351,7 @@ const Activities = () => {
                     isRegistered={isRegistered(act.id)}
                     placesRestantes={act.places_restantes}
                     date={act.date}
-                    onRegister={() => handleRegister(act.id)}
-                    isRegistering={registeringId === act.id}
-                    onClick={() => navigate(`/activities/${act.id}`)}
+                    onViewDetails={() => handleViewDetails(act.id)}
                   />
                 ))}
               </div>
@@ -259,7 +359,20 @@ const Activities = () => {
               {otherActivities.length === 0 && (
                 <div className="text-center py-20 bg-white rounded-[40px]">
                   <Calendar size={64} className="mx-auto text-slate-200 mb-4" />
-                  <p className="text-slate-400 font-bold">Aucune activité trouvée</p>
+                  <p className="text-slate-400 font-bold">
+                    {filterDate ? 'Aucune activité trouvée pour cette date' : 'Aucune activité trouvée'}
+                  </p>
+                  {filterDate && (
+                    <button
+                      onClick={() => {
+                        setFilterDate('');
+                        setDateFilterType('exact');
+                      }}
+                      className="mt-4 text-[#002366] font-bold text-sm underline"
+                    >
+                      Effacer le filtre
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -328,12 +441,13 @@ const StatBox = ({ label, value }) => (
   </div>
 );
 
-const ActivityCard = ({ id, img, tag, title, desc, tagColor, isRegistered, placesRestantes, date, onRegister, isRegistering, onClick }) => (
+const ActivityCard = ({ id, img, tag, title, desc, tagColor, isRegistered, placesRestantes, date, onViewDetails }) => (
   <motion.div 
     whileHover={{ y: -15 }}
-    className="bg-white rounded-[35px] md:rounded-[45px] overflow-hidden border border-slate-50 shadow-sm hover:shadow-2xl hover:shadow-blue-900/5 transition-all duration-500 group flex flex-col h-full"
+    className="bg-white rounded-[35px] md:rounded-[45px] overflow-hidden border border-slate-50 shadow-sm hover:shadow-2xl hover:shadow-blue-900/5 transition-all duration-500 group flex flex-col h-full cursor-pointer"
+    onClick={onViewDetails}
   >
-    <div className="relative h-48 md:h-64 overflow-hidden shrink-0 cursor-pointer" onClick={onClick}>
+    <div className="relative h-48 md:h-64 overflow-hidden shrink-0">
       <motion.img 
         src={img} 
         whileHover={{ scale: 1.15 }}
@@ -350,7 +464,7 @@ const ActivityCard = ({ id, img, tag, title, desc, tagColor, isRegistered, place
       )}
     </div>
     <div className="p-6 md:p-10 flex flex-col flex-1">
-      <h4 className="text-xl md:text-2xl font-black text-[#002366] leading-tight mb-4 group-hover:text-orange-600 transition-colors cursor-pointer" onClick={onClick}>{title}</h4>
+      <h4 className="text-xl md:text-2xl font-black text-[#002366] leading-tight mb-4 group-hover:text-orange-600 transition-colors">{title}</h4>
       <p className="text-slate-400 font-bold text-xs md:text-sm leading-relaxed mb-8 line-clamp-2">{desc}</p>
       
       <div className="flex items-center gap-4 text-[10px] text-slate-400 mb-6">
@@ -365,26 +479,9 @@ const ActivityCard = ({ id, img, tag, title, desc, tagColor, isRegistered, place
           </div>
           <span className="text-[11px] font-black text-slate-400">+{Math.floor(Math.random() * 50) + 20}</span>
         </div>
-
-        {!isRegistered && new Date(date) >= new Date() ? (
-          <motion.button 
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={onRegister}
-            disabled={isRegistering}
-            className="bg-[#002366] text-white px-6 md:px-8 py-2 md:py-3 rounded-xl text-[11px] font-black uppercase tracking-widest shadow-lg hover:bg-orange-600 transition-all duration-300 disabled:opacity-50"
-          >
-            {isRegistering ? <Loader2 size={14} className="animate-spin" /> : "S'inscrire"}
-          </motion.button>
-        ) : isRegistered ? (
-          <span className="text-green-600 font-black text-[11px] uppercase tracking-widest flex items-center gap-1">
-            <CheckCircle size={14} /> Inscrit
-          </span>
-        ) : (
-          <button onClick={onClick} className="text-[#002366] font-black text-[11px] uppercase tracking-widest hover:text-orange-600 transition-colors">
-            Détails
-          </button>
-        )}
+        <button className="text-[#002366] font-black text-[11px] uppercase tracking-widest hover:text-orange-600 transition-colors flex items-center gap-1">
+          Détails <ArrowRight size={12} />
+        </button>
       </div>
     </div>
   </motion.div>

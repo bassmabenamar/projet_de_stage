@@ -27,6 +27,7 @@ import HomeworkDetails from "./Homeworkdetails";
 import TutorialDetails from "./TutorialDetails";
 import Contact1 from "./pages/Contact1";
 import Academique from "./pages/Academique";
+import ActivityDetails from './ActivityDetails';
 // ── Guard: ila machi connecté → rj3 l /login ────────────────────────────────
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem('token');
@@ -85,6 +86,7 @@ function App() {
                       <Route path="/support"           element={<Support />} />
                       <Route path="/library/:id" element={<BookDetails />} />
                       <Route path="/homework/:id/details" element={<HomeworkDetails />} />
+                      <Route path="/activities/:id" element={<ActivityDetails />} />
                       
                     </Routes>
                   </main>

@@ -18,48 +18,39 @@ const HomeworkDetails = () => {
     try {
       setLoading(true);
       setError(null);
-
-      const response = await api.get(`/student/student/homework/${id}/download-pdf`, {
-        responseType: 'blob'
-      });
-
-      const url = URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
-      setPdfUrl(url);
-
-    } catch (err) {
-      console.error('Erreur chargement PDF:', err);
-      if (err.response?.status === 404) {
-        setError('Aucun PDF disponible pour ce devoir.');
-      } else if (err.response?.status === 401) {
-        setError('Session expirée. Veuillez vous reconnecter.');
-      } else {
-        setError('Impossible de charger le PDF. Veuillez réessayer.');
+      
+      // Récupérer le devoir d'abord
+      const response = await api.get('/student/homeworks');
+      const homeworks = response.data?.data || [];
+      const found = homeworks.find(h => h.id === parseInt(id));
+      
+      if (!found) {
+        setError('Devoir non trouvé');
+        setLoading(false);
+        return;
       }
-    } finally {
+      
+      const filePath = found.file_path || found.pdf_path;
+      
+      if (!filePath) {
+        setError('Aucun PDF disponible pour ce devoir');
+        setLoading(false);
+        return;
+      }
+      
+      // URL directe vers storage
+      const url = `http://127.0.0.1:8000/storage/${filePath}`;
+      setPdfUrl(url);
+      
+      setLoading(false);
+    } catch (err) {
+      console.error('Erreur:', err);
+      setError('Impossible de charger le devoir');
       setLoading(false);
     }
   };
 
-  const handleDownload = async () => {
-    try {
-      const response = await api.get(`/student/student/homework/${id}/download-pdf`, {
-        responseType: 'blob'
-      });
-      const blob = new Blob([response.data], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `devoir_${id}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error('Erreur téléchargement:', err);
-    }
-  };
-
-  const openPDF = () => {
+  const handleDownload = () => {
     if (pdfUrl) {
       window.open(pdfUrl, '_blank');
     }
@@ -68,7 +59,7 @@ const HomeworkDetails = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-[#F8FAFC]">
-        <Loader className="w-12 h-12 animate-spin text-blue-600" />
+        <Loader className="w-12 h-12 animate-spin text-[#002366]" />
       </div>
     );
   }
@@ -80,20 +71,12 @@ const HomeworkDetails = () => {
           <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
           <h2 className="text-xl font-semibold mb-2">Erreur</h2>
           <p className="text-gray-600 mb-6">{error}</p>
-          <div className="flex gap-3 justify-center">
-            <button
-              onClick={() => navigate('/homework')}
-              className="px-5 py-2 border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 transition"
-            >
-              Retour
-            </button>
-            <button
-              onClick={loadPDF}
-              className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-            >
-              Réessayer
-            </button>
-          </div>
+          <button
+            onClick={() => navigate('/homework')}
+            className="px-5 py-2 bg-[#002366] text-white rounded-lg hover:bg-[#1e3a8a] transition"
+          >
+            Retour
+          </button>
         </div>
       </div>
     );
@@ -101,43 +84,31 @@ const HomeworkDetails = () => {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
-
-      {/* Header */}
       <div className="bg-white border-b sticky top-0 z-10 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <button
             onClick={() => navigate('/homework')}
-            className="flex items-center gap-2 text-gray-600 hover:text-blue-700 transition"
+            className="flex items-center gap-2 text-gray-600 hover:text-[#002366] transition"
           >
             <ArrowLeft className="w-5 h-5" />
             <span>Retour</span>
           </button>
 
-          <div className="flex gap-3">
-            <button
-              onClick={openPDF}
-              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
-            >
-              <FileText className="w-4 h-4" />
-              <span className="hidden sm:inline">Ouvrir dans nouvel onglet</span>
-            </button>
-
+          {pdfUrl && (
             <button
               onClick={handleDownload}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+              className="flex items-center gap-2 px-4 py-2 bg-[#002366] text-white rounded-lg hover:bg-[#1e3a8a] transition"
             >
               <Download className="w-4 h-4" />
-              <span className="hidden sm:inline">Télécharger</span>
+              Télécharger PDF
             </button>
-          </div>
+          )}
         </div>
       </div>
 
-      {/* PDF iframe */}
       <div className="max-w-7xl mx-auto px-4 py-8">
         {pdfUrl && (
           <div className="bg-white rounded-2xl shadow-sm p-4">
-            <h2 className="text-xl font-bold mb-4">Aperçu du devoir</h2>
             <iframe
               src={pdfUrl}
               className="w-full h-[700px] rounded-lg border"

@@ -3,15 +3,15 @@ import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Bell, Megaphone, Wallet, BookOpen, GraduationCap, 
-  CheckCheck, X, Clock, Trash2,
+  CheckCheck, X, Clock, Trash2, FileText, Calendar, MessageCircle,
   ChevronLeft, ChevronRight, History, RefreshCw,
-  Sparkles, TrendingUp, CalendarDays
+  Sparkles, TrendingUp, CalendarDays, AlertCircle
 } from 'lucide-react';
 import api from './api';
 import Navbar from './Navbar';
 
 const Notifications = () => {
-  const [activeCategory, setActiveCategory] = useState('Toutes les notifications');
+  const [activeCategory, setActiveCategory] = useState('Toutes');
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -34,6 +34,9 @@ const Notifications = () => {
 
   useEffect(() => {
     fetchNotifications();
+    // Rafraîchir toutes les 30 secondes
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   // Marquer une notification comme lue
@@ -70,19 +73,22 @@ const Notifications = () => {
 
   // Ajouter une notification (simulation push)
   const addNotification = async () => {
-    const types = ['Annonces', 'Devoirs', 'Examens', 'Paiements'];
+    const types = ['annonce', 'devoir', 'examen', 'paiement', 'justificatif', 'conge', 'message'];
     const randomType = types[Math.floor(Math.random() * types.length)];
     const titles = {
-      'Annonces': '📢 Nouvelle annonce scolaire',
-      'Devoirs': '📝 Nouveau devoir à rendre',
-      'Examens': '📅 Rappel examen',
-      'Paiements': '💰 Rappel de paiement'
+      'annonce': '📢 Nouvelle annonce scolaire',
+      'devoir': '📝 Nouveau devoir à rendre',
+      'examen': '📅 Rappel examen',
+      'paiement': '💰 Rappel de paiement',
+      'justificatif': '📄 Justificatif d\'absence',
+      'conge': '🏖️ Demande de congé',
+      'message': '💬 Nouveau message'
     };
     
     const newNotif = {
       type: randomType,
       titre: titles[randomType],
-      contenu: `Ceci est une nouvelle ${randomType.toLowerCase()} ajoutée récemment. Veuillez prendre connaissance des détails dans votre espace personnel.`,
+      contenu: `Ceci est une nouvelle ${randomType} ajoutée récemment. Veuillez prendre connaissance des détails dans votre espace personnel.`,
       dateCreation: new Date().toISOString(),
       dateLu: 'Non'
     };
@@ -95,10 +101,35 @@ const Notifications = () => {
     }
   };
 
+  // Configuration des types avec leurs icônes et couleurs
+  const typeConfig = {
+    'annonce': { icon: <Megaphone />, color: 'blue', label: 'ANNONCE', gradient: 'from-blue-500 to-blue-700', bgLight: 'bg-blue-50 text-blue-600' },
+    'devoir': { icon: <BookOpen />, color: 'emerald', label: 'DEVOIR', gradient: 'from-emerald-500 to-emerald-700', bgLight: 'bg-emerald-50 text-emerald-600' },
+    'examen': { icon: <GraduationCap />, color: 'purple', label: 'EXAMEN', gradient: 'from-purple-500 to-purple-700', bgLight: 'bg-purple-50 text-purple-600' },
+    'paiement': { icon: <Wallet />, color: 'orange', label: 'PAIEMENT', gradient: 'from-orange-500 to-orange-700', bgLight: 'bg-orange-50 text-orange-600' },
+    'justificatif': { icon: <FileText />, color: 'cyan', label: 'JUSTIFICATIF', gradient: 'from-cyan-500 to-cyan-700', bgLight: 'bg-cyan-50 text-cyan-600' },
+    'conge': { icon: <Calendar />, color: 'indigo', label: 'CONGÉ', gradient: 'from-indigo-500 to-indigo-700', bgLight: 'bg-indigo-50 text-indigo-600' },
+    'message': { icon: <MessageCircle />, color: 'pink', label: 'MESSAGE', gradient: 'from-pink-500 to-pink-700', bgLight: 'bg-pink-50 text-pink-600' },
+    'note': { icon: <TrendingUp />, color: 'teal', label: 'NOTE', gradient: 'from-teal-500 to-teal-700', bgLight: 'bg-teal-50 text-teal-600' }
+  };
+
   // Filtrer notifications selon la catégorie active
-  const filteredNotifications = notifications.filter(
-    (n) => activeCategory === 'Toutes les notifications' || n.type === activeCategory
-  );
+  const filteredNotifications = notifications.filter((n) => {
+    if (activeCategory === 'Toutes') return true;
+    const type = (n.type || '').toLowerCase();
+    const category = activeCategory.toLowerCase();
+    
+    if (category === 'annonces') return type === 'annonce';
+    if (category === 'devoirs') return type === 'devoir';
+    if (category === 'examens') return type === 'examen';
+    if (category === 'paiements') return type === 'paiement';
+    if (category === 'justificatifs') return type === 'justificatif';
+    if (category === 'congés') return type === 'conge';
+    if (category === 'messages') return type === 'message';
+    if (category === 'notes') return type === 'note';
+    
+    return type === category;
+  });
 
   // Pagination
   const totalPages = Math.ceil(filteredNotifications.length / itemsPerPage);
@@ -109,18 +140,17 @@ const Notifications = () => {
 
   const unreadCount = notifications.filter((n) => n.dateLu === 'Non').length;
 
-  const configByType = {
-    'Annonces': { icon: <Megaphone />, color: 'blue', label: 'ANNONCE SCOLAIRE', gradient: 'from-blue-500 to-blue-700' },
-    'Devoirs': { icon: <BookOpen />, color: 'emerald', label: 'DEVOIR À RENDRE', gradient: 'from-emerald-500 to-emerald-700' },
-    'Examens': { icon: <GraduationCap />, color: 'purple', label: 'RAPPEL D\'EXAMEN', gradient: 'from-purple-500 to-purple-700' },
-    'Paiements': { icon: <Wallet />, color: 'orange', label: 'RAPPEL DE PAIEMENT', gradient: 'from-orange-500 to-orange-700' }
-  };
-
-  const colorClasses = {
-    blue: 'bg-blue-50 text-blue-600 border-blue-200 shadow-blue-100',
-    emerald: 'bg-emerald-50 text-emerald-600 border-emerald-200 shadow-emerald-100',
-    purple: 'bg-purple-50 text-purple-600 border-purple-200 shadow-purple-100',
-    orange: 'bg-orange-50 text-orange-600 border-orange-200 shadow-orange-100'
+  // Statistiques par type
+  const stats = {
+    total: notifications.length,
+    annonce: notifications.filter(n => (n.type || '').toLowerCase() === 'annonce').length,
+    devoir: notifications.filter(n => (n.type || '').toLowerCase() === 'devoir').length,
+    examen: notifications.filter(n => (n.type || '').toLowerCase() === 'examen').length,
+    paiement: notifications.filter(n => (n.type || '').toLowerCase() === 'paiement').length,
+    justificatif: notifications.filter(n => (n.type || '').toLowerCase() === 'justificatif').length,
+    conge: notifications.filter(n => (n.type || '').toLowerCase() === 'conge').length,
+    message: notifications.filter(n => (n.type || '').toLowerCase() === 'message').length,
+    note: notifications.filter(n => (n.type || '').toLowerCase() === 'note').length
   };
 
   const containerVariants = {
@@ -137,6 +167,12 @@ const Notifications = () => {
   const handleCategoryChange = (category) => {
     setActiveCategory(category);
     setCurrentPage(1);
+  };
+
+  // Obtenir la configuration du type
+  const getTypeConfig = (type) => {
+    const typeLower = (type || '').toLowerCase();
+    return typeConfig[typeLower] || typeConfig['annonce'];
   };
 
   return (
@@ -188,52 +224,32 @@ const Notifications = () => {
                 <motion.button 
                   whileHover={{ scale: 1.02, y: -2 }}
                   whileTap={{ scale: 0.98 }}
-                  onClick={addNotification}
+                  onClick={fetchNotifications}
                   className="flex items-center justify-center gap-2 px-5 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl text-xs font-black shadow-xl shadow-orange-500/20 transition-all hover:shadow-2xl"
                 >
-                  <RefreshCw size={16} /> SIMULER NOTIFICATION
+                  <RefreshCw size={16} /> RAFRAÎCHIR
                 </motion.button>
               </div>
             </div>
 
-            {/* Statistiques rapides */}
+            {/* Statistiques rapides - 8 catégories */}
             <motion.div 
               variants={itemVariants}
-              className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-10"
+              className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 mb-10"
             >
-              <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm hover:shadow-md transition-all">
-                <div className="flex items-center justify-between mb-2">
-                  <Megaphone size={18} className="text-blue-500" />
-                  <span className="text-2xl font-black text-[#002366]">{notifications.filter(n => n.type === 'Annonces').length}</span>
-                </div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Annonces</p>
-              </div>
-              <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm hover:shadow-md transition-all">
-                <div className="flex items-center justify-between mb-2">
-                  <BookOpen size={18} className="text-emerald-500" />
-                  <span className="text-2xl font-black text-[#002366]">{notifications.filter(n => n.type === 'Devoirs').length}</span>
-                </div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Devoirs</p>
-              </div>
-              <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm hover:shadow-md transition-all">
-                <div className="flex items-center justify-between mb-2">
-                  <GraduationCap size={18} className="text-purple-500" />
-                  <span className="text-2xl font-black text-[#002366]">{notifications.filter(n => n.type === 'Examens').length}</span>
-                </div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Examens</p>
-              </div>
-              <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm hover:shadow-md transition-all">
-                <div className="flex items-center justify-between mb-2">
-                  <Wallet size={18} className="text-orange-500" />
-                  <span className="text-2xl font-black text-[#002366]">{notifications.filter(n => n.type === 'Paiements').length}</span>
-                </div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Paiements</p>
-              </div>
+              <StatBox label="Total" value={stats.total} icon={<Bell size={16} />} color="slate" onClick={() => handleCategoryChange('Toutes')} />
+              <StatBox label="Annonces" value={stats.annonce} icon={<Megaphone size={16} />} color="blue" onClick={() => handleCategoryChange('Annonces')} />
+              <StatBox label="Devoirs" value={stats.devoir} icon={<BookOpen size={16} />} color="emerald" onClick={() => handleCategoryChange('Devoirs')} />
+              <StatBox label="Examens" value={stats.examen} icon={<GraduationCap size={16} />} color="purple" onClick={() => handleCategoryChange('Examens')} />
+              <StatBox label="Paiements" value={stats.paiement} icon={<Wallet size={16} />} color="orange" onClick={() => handleCategoryChange('Paiements')} />
+              <StatBox label="Justificatifs" value={stats.justificatif} icon={<FileText size={16} />} color="cyan" onClick={() => handleCategoryChange('Justificatifs')} />
+              <StatBox label="Congés" value={stats.conge} icon={<Calendar size={16} />} color="indigo" onClick={() => handleCategoryChange('Congés')} />
+              <StatBox label="Messages" value={stats.message} icon={<MessageCircle size={16} />} color="pink" onClick={() => handleCategoryChange('Messages')} />
             </motion.div>
 
             <div className="grid grid-cols-12 gap-6 lg:gap-8">
 
-              {/* Left Column - Catégories (Filtrage) */}
+              {/* Left Column - Catégories */}
               <div className="col-span-12 lg:col-span-3 space-y-6">
                 <motion.div 
                   variants={itemVariants} 
@@ -244,41 +260,14 @@ const Notifications = () => {
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Catégories</p>
                   </div>
                   <div className="flex lg:flex-col gap-2 overflow-x-auto lg:overflow-x-visible pb-2 lg:pb-0">
-                    <CategoryItem
-                      icon={<Bell size={18}/>}
-                      label="Toutes"
-                      count={notifications.length}
-                      active={activeCategory === 'Toutes les notifications'}
-                      onClick={() => handleCategoryChange('Toutes les notifications')}
-                    />
-                    <CategoryItem
-                      icon={<Megaphone size={18}/>}
-                      label="Annonces"
-                      count={notifications.filter(n => n.type === 'Annonces').length}
-                      active={activeCategory === 'Annonces'}
-                      onClick={() => handleCategoryChange('Annonces')}
-                    />
-                    <CategoryItem
-                      icon={<BookOpen size={18}/>}
-                      label="Devoirs"
-                      count={notifications.filter(n => n.type === 'Devoirs').length}
-                      active={activeCategory === 'Devoirs'}
-                      onClick={() => handleCategoryChange('Devoirs')}
-                    />
-                    <CategoryItem
-                      icon={<Wallet size={18}/>}
-                      label="Paiements"
-                      count={notifications.filter(n => n.type === 'Paiements').length}
-                      active={activeCategory === 'Paiements'}
-                      onClick={() => handleCategoryChange('Paiements')}
-                    />
-                    <CategoryItem
-                      icon={<GraduationCap size={18}/>}
-                      label="Examens"
-                      count={notifications.filter(n => n.type === 'Examens').length}
-                      active={activeCategory === 'Examens'}
-                      onClick={() => handleCategoryChange('Examens')}
-                    />
+                    <CategoryItem icon={<Bell size={18}/>} label="Toutes" count={stats.total} active={activeCategory === 'Toutes'} onClick={() => handleCategoryChange('Toutes')} />
+                    <CategoryItem icon={<Megaphone size={18}/>} label="Annonces" count={stats.annonce} active={activeCategory === 'Annonces'} onClick={() => handleCategoryChange('Annonces')} />
+                    <CategoryItem icon={<BookOpen size={18}/>} label="Devoirs" count={stats.devoir} active={activeCategory === 'Devoirs'} onClick={() => handleCategoryChange('Devoirs')} />
+                    <CategoryItem icon={<GraduationCap size={18}/>} label="Examens" count={stats.examen} active={activeCategory === 'Examens'} onClick={() => handleCategoryChange('Examens')} />
+                    <CategoryItem icon={<Wallet size={18}/>} label="Paiements" count={stats.paiement} active={activeCategory === 'Paiements'} onClick={() => handleCategoryChange('Paiements')} />
+                    <CategoryItem icon={<FileText size={18}/>} label="Justificatifs" count={stats.justificatif} active={activeCategory === 'Justificatifs'} onClick={() => handleCategoryChange('Justificatifs')} />
+                    <CategoryItem icon={<Calendar size={18}/>} label="Congés" count={stats.conge} active={activeCategory === 'Congés'} onClick={() => handleCategoryChange('Congés')} />
+                    <CategoryItem icon={<MessageCircle size={18}/>} label="Messages" count={stats.message} active={activeCategory === 'Messages'} onClick={() => handleCategoryChange('Messages')} />
                   </div>
                 </motion.div>
 
@@ -321,7 +310,7 @@ const Notifications = () => {
                 ) : (
                   <AnimatePresence mode="popLayout">
                     {paginatedNotifications.map((notif, idx) => {
-                      const style = configByType[notif.type] || configByType['Annonces'];
+                      const style = getTypeConfig(notif.type);
                       return (
                         <NotificationCard 
                           key={notif.id}
@@ -333,7 +322,7 @@ const Notifications = () => {
                           icon={style.icon}
                           color={style.color}
                           gradient={style.gradient}
-                          colorClass={colorClasses[style.color]}
+                          bgLight={style.bgLight}
                           isNew={notif.dateLu === 'Non'}
                           onMarkAsRead={markAsRead}
                           onDelete={deleteNotification}
@@ -347,24 +336,11 @@ const Notifications = () => {
                 {/* Pagination */}
                 {totalPages > 1 && (
                   <div className="flex justify-center gap-2 pt-6">
-                    <PaginationBtn 
-                      icon={<ChevronLeft size={16}/>} 
-                      onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                      disabled={currentPage === 1}
-                    />
+                    <PaginationBtn icon={<ChevronLeft size={16}/>} onClick={() => setCurrentPage(Math.max(1, currentPage - 1))} disabled={currentPage === 1} />
                     {[...Array(totalPages)].map((_, i) => (
-                      <PaginationBtn 
-                        key={i}
-                        label={String(i + 1).padStart(2, '0')}
-                        active={currentPage === i + 1}
-                        onClick={() => setCurrentPage(i + 1)}
-                      />
+                      <PaginationBtn key={i} label={String(i + 1).padStart(2, '0')} active={currentPage === i + 1} onClick={() => setCurrentPage(i + 1)} />
                     ))}
-                    <PaginationBtn 
-                      icon={<ChevronRight size={16}/>} 
-                      onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                      disabled={currentPage === totalPages}
-                    />
+                    <PaginationBtn icon={<ChevronRight size={16}/>} onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))} disabled={currentPage === totalPages} />
                   </div>
                 )}
               </div>
@@ -376,8 +352,36 @@ const Notifications = () => {
   );
 };
 
-/* --- Notification Card Style Pro --- */
-const NotificationCard = ({ id, type, title, desc, time, icon, color, gradient, colorClass, isNew, onMarkAsRead, onDelete, index }) => {
+// Composant StatBox
+const StatBox = ({ label, value, icon, color, onClick }) => {
+  const colors = {
+    slate: 'bg-slate-50 text-slate-600',
+    blue: 'bg-blue-50 text-blue-600',
+    emerald: 'bg-emerald-50 text-emerald-600',
+    purple: 'bg-purple-50 text-purple-600',
+    orange: 'bg-orange-50 text-orange-600',
+    cyan: 'bg-cyan-50 text-cyan-600',
+    indigo: 'bg-indigo-50 text-indigo-600',
+    pink: 'bg-pink-50 text-pink-600'
+  };
+  
+  return (
+    <motion.div 
+      whileHover={{ y: -3, scale: 1.02 }}
+      onClick={onClick}
+      className={`${colors[color]} rounded-xl p-3 text-center cursor-pointer transition-all hover:shadow-md`}
+    >
+      <div className="flex items-center justify-center gap-1 mb-1">
+        {icon}
+        <span className="text-lg font-black">{value}</span>
+      </div>
+      <p className="text-[8px] font-black uppercase tracking-wider">{label}</p>
+    </motion.div>
+  );
+};
+
+// Notification Card
+const NotificationCard = ({ id, type, title, desc, time, icon, color, gradient, bgLight, isNew, onMarkAsRead, onDelete, index }) => {
   const [isHovered, setIsHovered] = useState(false);
   
   const getTimeIcon = () => {
@@ -399,29 +403,22 @@ const NotificationCard = ({ id, type, title, desc, time, icon, color, gradient, 
       whileHover={{ y: -4 }}
       onHoverStart={() => setIsHovered(true)}
       onHoverEnd={() => setIsHovered(false)}
-      className={`bg-white rounded-2xl p-5 border transition-all duration-300 ${
+      className={`bg-white rounded-2xl p-5 border transition-all duration-300 relative ${
         isNew ? 'border-l-4 border-l-[#FF7A00] shadow-lg' : 'border-slate-100 shadow-sm hover:shadow-xl'
       }`}
     >
       <div className="flex flex-col sm:flex-row gap-4">
-        {/* Icon */}
         <motion.div 
           whileHover={{ rotateY: 180, scale: 1.05 }}
-          className={`w-14 h-14 rounded-xl flex items-center justify-center shrink-0 shadow-md ${colorClass} mx-auto sm:mx-0`}
+          className={`w-14 h-14 rounded-xl flex items-center justify-center shrink-0 shadow-md ${bgLight} mx-auto sm:mx-0`}
         >
           {React.cloneElement(icon, { size: 24 })}
         </motion.div>
 
-        {/* Content */}
         <div className="flex-1">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-2">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className={`text-[9px] font-black px-2 py-1 rounded-full uppercase tracking-wider ${
-                color === 'blue' ? 'bg-blue-100 text-blue-700' :
-                color === 'emerald' ? 'bg-emerald-100 text-emerald-700' :
-                color === 'purple' ? 'bg-purple-100 text-purple-700' :
-                'bg-orange-100 text-orange-700'
-              }`}>
+              <span className={`text-[9px] font-black px-2 py-1 rounded-full uppercase tracking-wider ${bgLight}`}>
                 {type}
               </span>
               {isNew && (
@@ -457,7 +454,6 @@ const NotificationCard = ({ id, type, title, desc, time, icon, color, gradient, 
           </div>
         </div>
 
-        {/* Delete button */}
         <motion.button 
           initial={{ opacity: 0 }}
           animate={{ opacity: isHovered ? 1 : 0 }}

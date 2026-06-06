@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   FileText, CheckCircle, Clock, XCircle, 
-  Download, Eye, ChevronRight, Calendar,
-  File, Loader2, Trash2
+  Download, ChevronRight, Calendar,
+  Loader2, Trash2
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from './Navbar';
@@ -14,6 +14,7 @@ const MySubmissions = () => {
   const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState(null);
+  const [downloadingId, setDownloadingId] = useState(null);
   const [stats, setStats] = useState({
     total: 0,
     valide: 0,
@@ -56,7 +57,6 @@ const MySubmissions = () => {
     setDeletingId(id);
     try {
       await api.delete(`/student/homework/submission/${id}`);
-      // Rafraîchir la liste après suppression
       await fetchSubmissions();
     } catch (error) {
       console.error('Erreur suppression:', error);
@@ -64,6 +64,12 @@ const MySubmissions = () => {
     } finally {
       setDeletingId(null);
     }
+  };
+
+  const handleDownload = (id) => {
+    const token = localStorage.getItem('token');
+    const url = `http://127.0.0.1:8000/api/student/homework/download/${id}?token=${token}`;
+    window.open(url, '_blank');
   };
 
   const getStatusBadge = (status) => {
@@ -179,8 +185,8 @@ const MySubmissions = () => {
                     submittedAt={formatDate(sub.created_at)}
                     deadline={sub.devoir?.DateDev ? formatDate(sub.devoir.DateDev) : 'Non définie'}
                     status={status}
-                    file={sub.fichier}
-                    onDelete={handleDelete}
+                    onDownload={() => handleDownload(sub.id)}
+                    onDelete={() => handleDelete(sub.id)}
                     isDeleting={deletingId === sub.id}
                   />
                 );
@@ -220,7 +226,7 @@ const StatCard = ({ label, value, icon, color }) => (
   </motion.div>
 );
 
-const SubmissionCard = ({ id, title, subject, submittedAt, deadline, status, file, onDelete, isDeleting }) => (
+const SubmissionCard = ({ id, title, subject, submittedAt, deadline, status, onDownload, onDelete, isDeleting }) => (
   <motion.div
     variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
     whileHover={{ y: -5, scale: 1.01 }}
@@ -249,20 +255,17 @@ const SubmissionCard = ({ id, title, subject, submittedAt, deadline, status, fil
       </div>
       
       <div className="flex items-center gap-2">
-        {file && (
-          <button
-            onClick={() => window.open(`http://127.0.0.1:8000/storage/${file}`, '_blank')}
-            className="flex items-center gap-2 px-4 py-2.5 bg-slate-50 hover:bg-[#002366] hover:text-white rounded-xl transition-all text-[10px] font-black uppercase tracking-widest"
-          >
-            <Download size={14} />
-            Télécharger
-          </button>
-        )}
+        <button
+          onClick={onDownload}
+          className="flex items-center gap-2 px-4 py-2.5 bg-slate-50 hover:bg-[#002366] hover:text-white rounded-xl transition-all text-[10px] font-black uppercase tracking-widest"
+        >
+          <Download size={14} />
+          Télécharger
+        </button>
         
-        {/* ✅ Bouton Supprimer - apparaît seulement si le statut n'est pas "valide" */}
         {status.text !== 'Validé' && (
           <button
-            onClick={() => onDelete(id)}
+            onClick={onDelete}
             disabled={isDeleting}
             className="flex items-center gap-2 px-4 py-2.5 bg-red-50 text-red-600 hover:bg-red-600 hover:text-white rounded-xl transition-all text-[10px] font-black uppercase tracking-widest disabled:opacity-50"
           >

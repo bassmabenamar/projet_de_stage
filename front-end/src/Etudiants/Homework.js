@@ -14,29 +14,44 @@ const Homework = () => {
   const navigate = useNavigate();
   
   const [homeworks, setHomeworks] = useState([]);
+  const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('Toutes les tâches');
   const [sortBy, setSortBy] = useState('date');
   const [downloadingId, setDownloadingId] = useState(null);
 
   useEffect(() => {
-    const fetchHomeworks = async () => {
+    const fetchData = async () => {
       try {
-        const response = await api.get('/student/homeworks');
-        const homeworksData = response.data?.data || [];
+        setLoading(true);
+        
+        // Charger les devoirs
+        const homeworksRes = await api.get('/student/homeworks');
+        const homeworksData = homeworksRes.data?.data || [];
         setHomeworks(homeworksData);
+        
+        // Charger les soumissions
+        const submissionsRes = await api.get('/student/homework/submissions');
+        const submissionsData = submissionsRes.data?.data || [];
+        setSubmissions(submissionsData);
+        
         setLoading(false);
       } catch (error) {
         console.error("Erreur fetching:", error);
         setHomeworks([]);
+        setSubmissions([]);
         setLoading(false);
       }
     };
-    fetchHomeworks();
+    fetchData();
   }, []);
 
   const getFilteredHomeworks = () => {
-    let filtered = [...homeworks];
+    // Ajouter le status basé sur les soumissions
+    let filtered = homeworks.map(hw => {
+      const submitted = submissions.some(s => s.devoir_id === hw.id);
+      return { ...hw, status: submitted ? 'submitted' : 'pending' };
+    });
     
     if (activeTab === 'En attente') {
       filtered = filtered.filter(hw => hw.status !== 'submitted');
@@ -62,8 +77,11 @@ const Homework = () => {
   };
 
   const filteredHomeworks = getFilteredHomeworks();
-  const pendingCount = homeworks.filter(hw => hw.status !== 'submitted').length;
-  const submittedCount = homeworks.filter(hw => hw.status === 'submitted').length;
+  const pendingCount = homeworks.filter(hw => {
+    const submitted = submissions.some(s => s.devoir_id === hw.id);
+    return !submitted;
+  }).length;
+  const submittedCount = submissions.length;
   const urgentCount = homeworks.filter(hw => {
     const deadline = new Date(hw.DateDev || hw.date_limite || hw.created_at);
     const today = new Date();
@@ -84,24 +102,25 @@ const Homework = () => {
     }
   };
 
-  // ✅ FIXED: backend renvoie le fichier PDF directement (binary), pas JSON
+  // Téléchargement PDF direct depuis storage
   const downloadHomeworkPDF = async (homework) => {
     setDownloadingId(homework.id);
     try {
-      const response = await api.get(`/student/student/homework/${homework.id}/download-pdf`, {
-        responseType: 'blob',
-      });
-      const blobUrl = URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
-      const link = document.createElement('a');
-      link.href = blobUrl;
-      link.download = `devoir_${homework.titre || homework.id}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(blobUrl);
+      const filePath = homework.file_path || homework.pdf_path;
+      
+      if (!filePath) {
+        alert('Aucun PDF disponible pour ce devoir.');
+        setDownloadingId(null);
+        return;
+      }
+      
+      let fileUrl = `http://127.0.0.1:8000/storage/${filePath}`;
+      console.log('Téléchargement PDF:', fileUrl);
+      window.open(fileUrl, '_blank');
+      
     } catch (error) {
-      console.error('❌ Erreur téléchargement PDF:', error);
-      alert('Aucun PDF disponible pour ce devoir.');
+      console.error('Erreur téléchargement:', error);
+      alert('Erreur lors du téléchargement du PDF');
     } finally {
       setDownloadingId(null);
     }
@@ -232,22 +251,24 @@ const Homework = () => {
               const deadlineDate = new Date(hw.DateDev || hw.date_limite || hw.created_at);
               const today = new Date();
               const isUrgent = (deadlineDate - today) / (1000 * 60 * 60 * 24) <= 2;
+              const isSubmitted = hw.status === 'submitted';
               
               return (
                 <HomeworkCard 
                   key={hw.id || index}
                   id={hw.id}
-                  status={hw.status === 'submitted' ? 'Soumis' : 'En attente'}
+                  status={isSubmitted ? 'Soumis' : 'En attente'}
                   dueText={isUrgent ? 'URGENT' : ''}
                   title={hw.titre || hw.title || 'Sans titre'}
                   professor={hw.matiere ? hw.matiere.nom : (hw.professeur_nom || 'Professeur')}
                   deadline={formatDate(hw.DateDev || hw.date_limite || hw.created_at)}
-                  progress={hw.status === 'submitted' ? 100 : 30}
+                  progress={isSubmitted ? 100 : 30}
                   isUrgent={isUrgent}
-                  isSubmitted={hw.status === 'submitted'}
+                  isSubmitted={isSubmitted}
                   navigate={navigate}
                   onDownloadPDF={() => downloadHomeworkPDF(hw)}
                   isDownloading={downloadingId === hw.id}
+                  hasFile={!!(hw.file_path || hw.pdf_path)}
                 />
               );
             })}
@@ -355,7 +376,7 @@ const StatCard = ({ icon, label, value, sub, color, bg, onClick }) => (
   </motion.div>
 );
 
-const HomeworkCard = ({ id, status, dueText, title, professor, deadline, progress, isUrgent, isSubmitted, navigate, onDownloadPDF, isDownloading }) => {
+const HomeworkCard = ({ id, status, dueText, title, professor, deadline, progress, isUrgent, isSubmitted, navigate, onDownloadPDF, isDownloading, hasFile }) => {
   const [showMenu, setShowMenu] = useState(false);
 
   return (
@@ -372,7 +393,6 @@ const HomeworkCard = ({ id, status, dueText, title, professor, deadline, progres
           {dueText && <span className="text-red-500 font-black text-[10px] uppercase tracking-widest">{dueText}</span>}
         </div>
         
-        {/* Menu 3 points */}
         <div className="relative">
           <motion.button 
             whileHover={{ rotate: 90 }} 
@@ -386,8 +406,6 @@ const HomeworkCard = ({ id, status, dueText, title, professor, deadline, progres
             <>
               <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
               <div className="absolute right-0 mt-2 w-56 z-50 bg-white rounded-xl shadow-lg border border-slate-100 overflow-hidden">
-                
-                {/* ✅ Voir les détails + PDF inline */}
                 <button
                   onClick={() => {
                     setShowMenu(false);
@@ -398,24 +416,23 @@ const HomeworkCard = ({ id, status, dueText, title, professor, deadline, progres
                   <Eye size={16} />
                   Voir détails & PDF
                 </button>
-
-                {/* ✅ Télécharger le PDF */}
-                <button
-                  onClick={() => {
-                    setShowMenu(false);
-                    onDownloadPDF();
-                  }}
-                  disabled={isDownloading}
-                  className="w-full px-4 py-3 text-left text-sm font-medium text-slate-600 hover:bg-slate-50 flex items-center gap-2 transition-colors disabled:opacity-50"
-                >
-                  {isDownloading ? (
-                    <div className="w-4 h-4 border-2 border-slate-600 border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    <Download size={16} />
-                  )}
-                  <span>{isDownloading ? 'Chargement...' : 'Télécharger PDF'}</span>
-                </button>
-
+                {hasFile && (
+                  <button
+                    onClick={() => {
+                      setShowMenu(false);
+                      onDownloadPDF();
+                    }}
+                    disabled={isDownloading}
+                    className="w-full px-4 py-3 text-left text-sm font-medium text-slate-600 hover:bg-slate-50 flex items-center gap-2 transition-colors disabled:opacity-50"
+                  >
+                    {isDownloading ? (
+                      <div className="w-4 h-4 border-2 border-slate-600 border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <Download size={16} />
+                    )}
+                    <span>{isDownloading ? 'Chargement...' : 'Télécharger PDF'}</span>
+                  </button>
+                )}
                 {!isSubmitted && (
                   <button
                     onClick={() => {

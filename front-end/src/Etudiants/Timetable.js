@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import axios from 'axios';
 import { 
   Printer, Download, Play, Clock, 
   Users, MapPin, ChevronLeft, ChevronRight, Share2
@@ -34,7 +33,8 @@ const COLORS = [
 
 // ── Time slots ───────────────────────────────────────────────────────────────
 const TIME_SLOTS = [
-  '08H30','09H30','10H30','11H30','12H30','13H30','14H30','15H30','16H30','17H30','18H30'
+  '08:00', '09:00', '10:00', '11:00', '12:00', 
+  '13:00', '14:00', '15:00', '16:00', '17:00', '18:00'
 ];
 
 const DAY_ORDER = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
@@ -50,25 +50,16 @@ const DAY_LABELS_FR = {
 // ── Find which time slot a session belongs to ────────────────────────────────
 const getSessionSlot = (heureDebut) => {
   if (!heureDebut) return null;
-  const [h, m] = heureDebut.split(':').map(Number);
-  const totalMin = h * 60 + m;
-  // Map to nearest slot index
-  const slotMinutes = TIME_SLOTS.map(t => {
-    const [sh, sm] = t.replace('H',':').split(':').map(Number);
-    return sh * 60 + sm;
-  });
-  for (let i = 0; i < slotMinutes.length - 1; i++) {
-    if (totalMin >= slotMinutes[i] && totalMin < slotMinutes[i + 1]) return i;
-  }
-  return null;
+  const index = TIME_SLOTS.findIndex(slot => slot === heureDebut);
+  return index !== -1 ? index : null;
 };
 
 const getSessionDuration = (heureDebut, heureFin) => {
   if (!heureDebut || !heureFin) return 1;
-  const [h1, m1] = heureDebut.split(':').map(Number);
-  const [h2, m2] = heureFin.split(':').map(Number);
-  const mins = (h2 * 60 + m2) - (h1 * 60 + m1);
-  return Math.max(1, Math.round(mins / 60));
+  const startIdx = TIME_SLOTS.findIndex(slot => slot === heureDebut);
+  const endIdx = TIME_SLOTS.findIndex(slot => slot === heureFin);
+  if (startIdx === -1 || endIdx === -1) return 1;
+  return Math.max(1, endIdx - startIdx);
 };
 
 const Timetable = () => {
@@ -86,16 +77,20 @@ const Timetable = () => {
         let raw = [];
         if (Array.isArray(response.data)) {
           raw = response.data;
-        } else if (typeof response.data === 'object' && response.data !== null) {
-          raw = Object.values(response.data).flat();
+        } else if (response.data?.data && Array.isArray(response.data.data)) {
+          raw = response.data.data;
+        } else if (response.data?.all && Array.isArray(response.data.all)) {
+          raw = response.data.all;
         }
 
         const normalized = raw.map((item, idx) => ({
           ...item,
-          day: JOUR_MAP[item.jour] || item.jour,
-          subject: item.cours,
-          teacher: item.professeur_nom,
-          room: item.salle_nom,
+          day: item.jour || item.day,
+          subject: item.cours || item.matiere?.nom || item.subject || 'Cours',
+          teacher: item.professeur_nom || item.enseignant?.nom_complet || item.teacher || 'Professeur',
+          room: item.salle_nom || item.salle?.nom || item.room || 'Salle',
+          heure_debut: item.heure_debut || '08:00',
+          heure_fin: item.heure_fin || '10:00',
           color_index: idx % COLORS.length,
         }));
 
@@ -112,7 +107,6 @@ const Timetable = () => {
 
   // ── Build grid: for each day × slot, find session ──────────────────────────
   const buildGrid = () => {
-    // grid[day][slotIndex] = { session, colSpan } | null
     const grid = {};
     DAY_ORDER.forEach(day => {
       grid[day] = Array(TIME_SLOTS.length - 1).fill(null);
@@ -125,7 +119,6 @@ const Timetable = () => {
       if (slotIdx === null) return;
       const span = getSessionDuration(session.heure_debut, session.heure_fin);
       grid[day][slotIdx] = { session, colSpan: span };
-      // Mark subsequent slots as "merged"
       for (let i = 1; i < span && slotIdx + i < grid[day].length; i++) {
         grid[day][slotIdx + i] = 'merged';
       }
@@ -134,7 +127,7 @@ const Timetable = () => {
     return grid;
   };
 
-  // ─── Fonction d'impression ───────────────────────────────────────────────
+  // ─── Impression ───────────────────────────────────────────────────────────
   const handlePrint = () => {
     const printContent = document.getElementById('timetable-print');
     if (!printContent) return;
@@ -169,7 +162,7 @@ const Timetable = () => {
     printWindow.print();
   };
 
-  // ─── Fonction d'export PDF ───────────────────────────────────────────────
+  // ─── Export PDF ─────────────────────────────────────────────────────────
   const handleExportPDF = async () => {
     const element = document.getElementById('timetable-export');
     if (!element) return;
@@ -203,7 +196,7 @@ const Timetable = () => {
     }
   };
 
-  // ─── Fonction de partage ─────────────────────────────────────────────────
+  // ─── Partage ─────────────────────────────────────────────────────────────
   const handleShare = async () => {
     const shareData = {
       title: 'Emploi du Temps - Amity School',
@@ -321,59 +314,37 @@ const Timetable = () => {
             {/* ── Timetable Body ── */}
             <div id="timetable-export" ref={timetableRef}>
               <motion.div variants={cardVariants} className="bg-white rounded-[30px] md:rounded-[40px] p-6 md:p-10 border border-slate-100 shadow-2xl shadow-slate-200/40 mb-10 overflow-x-auto">
-
-                {/* ── OFPPT-style institutional table ── */}
                 <table id="timetable-print" className="w-full min-w-[900px] border-collapse text-[11px] font-sans">
                   <thead>
-                    {/* Time header row */}
                     <tr>
-                      {/* Empty corner spanning day col + row-label col */}
-                      <th
-                        colSpan={2}
-                        className="border border-slate-300 bg-[#002366] text-white text-[10px] font-black px-2 py-2 text-center"
-                      >
+                      <th colSpan={2} className="border border-slate-300 bg-[#002366] text-white text-[10px] font-black px-2 py-2 text-center">
                         Jour / Heure
                       </th>
                       {TIME_SLOTS.map((slot, idx) => (
-                        <th
-                          key={idx}
-                          className="border border-slate-300 bg-[#002366] text-white text-[9px] font-black px-1 py-2 text-center whitespace-nowrap"
-                        >
+                        <th key={idx} className="border border-slate-300 bg-[#002366] text-white text-[9px] font-black px-1 py-2 text-center whitespace-nowrap">
                           {slot}
                         </th>
                       ))}
                     </tr>
                   </thead>
-
                   <tbody>
                     {DAY_ORDER.map((day, dayIdx) => {
                       const daySlots = grid[day];
                       const rowLabels = ['Module', 'Formateur', 'Salle'];
-
                       return rowLabels.map((label, rowIdx) => (
                         <tr key={`${day}-${rowIdx}`}>
-                          {/* Day label cell — only on first sub-row, spans 3 */}
                           {rowIdx === 0 && (
-                            <td
-                              rowSpan={3}
-                              className="border border-slate-300 bg-[#EFF6FF] text-[#002366] font-black text-[11px] text-center px-2 py-1 whitespace-nowrap"
-                            >
+                            <td rowSpan={3} className="border border-slate-300 bg-[#EFF6FF] text-[#002366] font-black text-[11px] text-center px-2 py-1 whitespace-nowrap">
                               {DAY_LABELS_FR[day]}
                             </td>
                           )}
-
-                          {/* Row label */}
                           <td className="border border-slate-300 bg-[#F8FAFC] text-slate-500 font-bold text-[9px] px-2 py-1 whitespace-nowrap">
                             {label}
                           </td>
-
-                          {/* Time slot cells */}
                           {daySlots.map((cell, slotIdx) => {
                             if (cell === 'merged') return null;
-
                             const session = cell ? cell.session : null;
                             const colSpan = cell ? cell.colSpan : 1;
-
                             const cellValue = session
                               ? rowIdx === 0
                                 ? session.subject
@@ -381,47 +352,13 @@ const Timetable = () => {
                                 ? session.teacher
                                 : session.room
                               : '';
-
-                            // Color accent based on session
-                            const colorIdx = session ? session.color_index : null;
-                            const bgColor = session
-                              ? [
-                                  'bg-blue-50',
-                                  'bg-orange-50',
-                                  'bg-purple-50',
-                                  'bg-emerald-50',
-                                  'bg-indigo-50',
-                                  'bg-rose-50',
-                                  'bg-cyan-50',
-                                ][colorIdx % 7]
-                              : '';
-
-                            const textColor = session
-                              ? [
-                                  'text-[#002366]',
-                                  'text-orange-700',
-                                  'text-purple-700',
-                                  'text-emerald-700',
-                                  'text-indigo-700',
-                                  'text-rose-700',
-                                  'text-cyan-700',
-                                ][colorIdx % 7]
-                              : '';
-
-                            const fontWeight = session && rowIdx === 0 ? 'font-black' : 'font-semibold';
-
+                            const colorIdx = session ? session.color_index : 0;
+                            const colorClass = COLORS[colorIdx % COLORS.length] || COLORS[0];
+                            const parts = colorClass.split(' ');
+                            const bgColor = parts[1] || '';
+                            const textColor = parts[2] || '';
                             return (
-                              <td
-                                key={slotIdx}
-                                colSpan={colSpan}
-                                className={`
-                                  border border-slate-200 px-2 py-1 text-center
-                                  text-[9px] ${fontWeight}
-                                  ${session ? bgColor : ''}
-                                  ${session ? textColor : 'text-slate-300'}
-                                  transition-colors
-                                `}
-                              >
+                              <td key={slotIdx} colSpan={colSpan} className={`border border-slate-200 px-2 py-1 text-center text-[9px] font-semibold ${session ? bgColor : ''} ${session ? textColor : 'text-slate-300'}`}>
                                 {cellValue}
                               </td>
                             );
@@ -431,7 +368,6 @@ const Timetable = () => {
                     })}
                   </tbody>
                 </table>
-
               </motion.div>
             </div>
 
@@ -475,12 +411,30 @@ const Timetable = () => {
 
             {/* ── Legend ── */}
             <motion.div variants={cardVariants} className="bg-white/40 backdrop-blur-sm border border-slate-100 rounded-[24px] p-6 flex flex-wrap gap-6 justify-center no-print">
-              <LegendItem color="bg-[#002366]" label="Sciences" />
-              <LegendItem color="bg-orange-400" label="Maths" />
-              <LegendItem color="bg-purple-400" label="Langues" />
-              <LegendItem color="bg-indigo-400" label="Social" />
-              <LegendItem color="bg-rose-400" label="Arts" />
-              <LegendItem color="bg-cyan-400" label="Sport" />
+              <div className="flex items-center gap-2 group cursor-default">
+                <div className="w-2.5 h-2.5 rounded-full bg-[#002366]" />
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Sciences</span>
+              </div>
+              <div className="flex items-center gap-2 group cursor-default">
+                <div className="w-2.5 h-2.5 rounded-full bg-orange-400" />
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Maths</span>
+              </div>
+              <div className="flex items-center gap-2 group cursor-default">
+                <div className="w-2.5 h-2.5 rounded-full bg-purple-400" />
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Langues</span>
+              </div>
+              <div className="flex items-center gap-2 group cursor-default">
+                <div className="w-2.5 h-2.5 rounded-full bg-indigo-400" />
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Social</span>
+              </div>
+              <div className="flex items-center gap-2 group cursor-default">
+                <div className="w-2.5 h-2.5 rounded-full bg-rose-400" />
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Arts</span>
+              </div>
+              <div className="flex items-center gap-2 group cursor-default">
+                <div className="w-2.5 h-2.5 rounded-full bg-cyan-400" />
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Sport</span>
+              </div>
             </motion.div>
 
           </motion.div>
@@ -489,12 +443,5 @@ const Timetable = () => {
     </div>
   );
 };
-
-const LegendItem = ({ color, label }) => (
-  <div className="flex items-center gap-2 group cursor-default">
-    <div className={`w-2.5 h-2.5 rounded-full ${color}`} />
-    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{label}</span>
-  </div>
-);
 
 export default Timetable;

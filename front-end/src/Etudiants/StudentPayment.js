@@ -104,7 +104,7 @@ const StudentPayment = () => {
     if (filterStatus === 'all') return true;
     const status = (payment.status || '').toLowerCase();
     if (filterStatus === 'paid') return status === 'payé' || status === 'complété' || status === 'completed' || status === 'paid';
-    if (filterStatus === 'pending') return status === 'en attente' || status === 'pending';
+    if (filterStatus === 'pending') return status === 'en_attente' || status === 'pending';
     return true;
   });
 
@@ -125,7 +125,7 @@ const StudentPayment = () => {
     ? payments
         .filter(p => {
           const status = (p.status || '').toLowerCase();
-          return status === 'en attente' || status === 'pending';
+          return status === 'en_attente' || status === 'pending';
         })
         .reduce((acc, curr) => {
           const amount = parseFloat(curr.amount || curr.montant || 0);
@@ -141,7 +141,7 @@ const StudentPayment = () => {
     if (payments.length === 0) return "Non programmé";
     const pendingPayments = payments.filter(p => {
       const status = (p.status || '').toLowerCase();
-      return status === 'en attente' || status === 'pending';
+      return status === 'en_attente' || status === 'pending';
     });
     if (pendingPayments.length > 0 && pendingPayments[0].date) {
       return new Date(pendingPayments[0].date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });

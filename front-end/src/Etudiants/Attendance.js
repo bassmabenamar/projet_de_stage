@@ -12,6 +12,22 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from './Navbar';
 import api from './api';
 
+// ✅ Fonction de normalisation des statuts
+const normalizeStatus = (status) => {
+  const statusLower = (status || '').toLowerCase().trim();
+  
+  if (statusLower === 'présent' || statusLower === 'present' || statusLower === 'presente' || statusLower === 'present') {
+    return 'Présent';
+  }
+  if (statusLower === 'absent' || statusLower === 'absence' || statusLower === 'abscence' || statusLower === 'abs') {
+    return 'Absent';
+  }
+  if (statusLower === 'retard' || statusLower === 'late' || statusLower === 'en retard' || statusLower === 'ret') {
+    return 'Retard';
+  }
+  return 'Présent'; // Valeur par défaut
+};
+
 const Attendance = () => {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
@@ -42,7 +58,10 @@ const Attendance = () => {
     const fetchAttendance = async () => {
       try {
         const response = await api.get('/student/attendance');
-        const attendanceArray = response.data?.data || [];
+        const attendanceArray = (response.data?.data || []).map(item => ({
+          ...item,
+          statut: normalizeStatus(item.statut) // ✅ Normalisation des statuts
+        }));
         console.log('Données de présence chargées:', attendanceArray);
         setAttendanceData(attendanceArray);
         setLoading(false);
@@ -55,7 +74,7 @@ const Attendance = () => {
     fetchAttendance();
   }, []);
 
-  // Calcul des stats dynamiques
+  // ✅ Calcul des stats dynamiques avec normalisation
   const stats = {
     present: attendanceData.filter(a => a.statut === 'Présent').length,
     absent: attendanceData.filter(a => a.statut === 'Absent').length,
@@ -67,7 +86,7 @@ const Attendance = () => {
     ? Math.round((stats.present / stats.total) * 100) 
     : 0;
 
-  // Filtrer les données
+  // ✅ Filtrer les données correctement
   const filteredData = attendanceData.filter(item => {
     if (filterStatus === 'Tous') return true;
     return item.statut === filterStatus;
@@ -95,7 +114,11 @@ const Attendance = () => {
       setJustifyReason('');
       setJustifyingId(null);
       const response = await api.get('/student/attendance');
-      setAttendanceData(response.data?.data || []);
+      const attendanceArray = (response.data?.data || []).map(item => ({
+        ...item,
+        statut: normalizeStatus(item.statut)
+      }));
+      setAttendanceData(attendanceArray);
     } catch (error) {
       console.error('Erreur:', error);
       alert('Erreur lors de l\'envoi du justificatif');
@@ -164,7 +187,11 @@ const Attendance = () => {
       
       alert('Justificatif médical téléchargé avec succès');
       const attendanceResponse = await api.get('/student/attendance');
-      setAttendanceData(attendanceResponse.data?.data || []);
+      const attendanceArray = (attendanceResponse.data?.data || []).map(item => ({
+        ...item,
+        statut: normalizeStatus(item.statut)
+      }));
+      setAttendanceData(attendanceArray);
     } catch (error) {
       console.error('Erreur:', error);
       alert('Erreur: ' + (error.response?.data?.message || error.message));
@@ -187,7 +214,7 @@ const Attendance = () => {
       ])
     ].map(row => row.join(',')).join('\n');
     
-    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -258,7 +285,6 @@ const Attendance = () => {
                   <Download size={16} /> Exporter
                 </motion.button>
                 
-                {/* ✅ Bouton Mes Congés */}
                 <motion.button 
                   whileHover={{ scale: 1.05, backgroundColor: "#1E40AF" }}
                   whileTap={{ scale: 0.95 }}
@@ -274,7 +300,7 @@ const Attendance = () => {
                   onClick={() => setShowLeaveModal(true)}
                   className="flex-1 md:flex-none px-8 py-3.5 bg-[#002366] text-white rounded-[18px] text-[11px] font-black shadow-lg uppercase tracking-[0.2em] transition-all"
                 >
-                  Congé
+                  Nouveau Congé
                 </motion.button>
               </div>
             </motion.div>
@@ -299,7 +325,7 @@ const Attendance = () => {
                     <span className="text-3xl md:text-4xl font-black text-[#002366] group-hover:text-orange-600">{attendancePercentage}%</span>
                   </div>
                 </div>
-                <h3 className="font-black text-[#002366] text-lg md:text-xl mb-1">{attendancePercentage > 90 ? 'Excellent !' : 'Bon travail'}</h3>
+                <h3 className="font-black text-[#002366] text-lg md:text-xl mb-1">{attendancePercentage > 90 ? 'Excellent !' : attendancePercentage > 70 ? 'Bon travail' : 'À améliorer'}</h3>
                 <p className="text-slate-400 text-xs md:text-sm font-bold">Assiduité globale.</p>
               </motion.div>
 
@@ -377,22 +403,26 @@ const Attendance = () => {
                 <motion.div variants={cardVariants} className="bg-white rounded-[35px] md:rounded-[45px] p-8 md:p-10 border border-slate-50 shadow-xl shadow-slate-200/30">
                   <h4 className="text-[10px] md:text-[11px] font-black text-slate-300 uppercase tracking-[0.25em] mb-6 md:mb-8">Alertes</h4>
                   <div className="space-y-4 md:space-y-6">
-                    <AlertBox 
-                      color="bg-amber-50" 
-                      icon={<AlertTriangle className="text-amber-600" size={18}/>} 
-                      title="Arrivée Tardive" 
-                      sub="11 Oct - 08:45" 
-                      action="Justifier"
-                      onAction={() => { setShowJustifyModal(true); setJustifyingId(1); }}
-                    />
-                    <AlertBox 
-                      color="bg-blue-50" 
-                      icon={<FileText className="text-blue-600" size={18}/>} 
-                      title="Justificatif Médical" 
-                      sub="Téléchargez votre justificatif médical"
-                      action="Télécharger"
-                      onAction={() => fileInputRef.current?.click()}
-                    />
+                    {attendanceData.some(a => a.statut === 'Retard') && (
+                      <AlertBox 
+                        color="bg-amber-50" 
+                        icon={<AlertTriangle className="text-amber-600" size={18}/>} 
+                        title="Arrivée Tardive" 
+                        sub="Justifiez votre retard" 
+                        action="Justifier"
+                        onAction={() => { setShowJustifyModal(true); setJustifyingId(attendanceData.find(a => a.statut === 'Retard')?.id); }}
+                      />
+                    )}
+                    {attendanceData.some(a => a.statut === 'Absent') && (
+                      <AlertBox 
+                        color="bg-rose-50" 
+                        icon={<FileText className="text-rose-600" size={18}/>} 
+                        title="Justificatif d'absence" 
+                        sub="Téléchargez votre justificatif médical"
+                        action="Télécharger"
+                        onAction={() => fileInputRef.current?.click()}
+                      />
+                    )}
                     <input 
                       type="file"
                       ref={fileInputRef}
@@ -427,12 +457,12 @@ const Attendance = () => {
                   <select 
                     value={filterStatus}
                     onChange={(e) => setFilterStatus(e.target.value)}
-                    className="text-[10px] font-black text-slate-400 bg-slate-50 px-4 py-2 rounded-2xl border border-slate-100"
+                    className="text-[10px] font-black text-slate-400 bg-slate-50 px-4 py-2 rounded-2xl border border-slate-100 cursor-pointer"
                   >
-                    <option value="Tous">Tous</option>
-                    <option value="Présent">Présent</option>
-                    <option value="Absent">Absent</option>
-                    <option value="Retard">Retard</option>
+                    <option value="Tous">📋 Tous</option>
+                    <option value="Présent">✅ Présent</option>
+                    <option value="Absent">❌ Absent</option>
+                    <option value="Retard">⏰ Retard</option>
                   </select>
                   <motion.button 
                     whileHover={{ x: 5 }} 
@@ -480,7 +510,7 @@ const Attendance = () => {
                               row.statut === 'Présent' ? 'bg-green-50 text-green-600' : 
                               row.statut === 'Retard' ? 'bg-amber-50 text-amber-600' : 'bg-rose-50 text-rose-600'
                             }`}>
-                              {row.statut}
+                              {row.statut === 'Présent' ? '✓ Présent' : row.statut === 'Retard' ? '⏰ Retard' : '✗ Absent'}
                             </span>
                           </td>
                           <td className="py-6 text-slate-400 text-xs truncate max-w-[100px]">{row.remarque || '---'}</td>

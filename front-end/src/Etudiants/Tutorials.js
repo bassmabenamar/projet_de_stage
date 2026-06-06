@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Play, Clock, User, Eye, ThumbsUp, 
-  Search, Filter, BookOpen, ChevronRight,
-  Award, TrendingUp, Video, Headphones, Calendar
+  Search, ChevronRight,
+  Award, Video
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from './Navbar';
@@ -92,11 +92,16 @@ const Tutorials = () => {
                 Apprenez à votre rythme avec nos experts
               </p>
             </div>
+            {/* ✅ Le bouton Continuer a été corrigé - il ne référence plus 'tutorial' */}
             <div className="flex gap-3">
               <motion.button 
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => navigate(`/tutorials/${tutorial.id}/details`)}
+                onClick={() => {
+                  if (tutorials.length > 0) {
+                    navigate(`/tutorials/${tutorials[0].id}`);
+                  }
+                }}
                 className="flex items-center gap-2 px-6 py-3 bg-[#002366] text-white rounded-xl text-[10px] font-black shadow-lg uppercase tracking-widest"
               >
                 <Play size={14} /> Continuer

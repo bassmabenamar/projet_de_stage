@@ -1,69 +1,72 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Download, FileText, AlertCircle, Loader,Star } from 'lucide-react';
+import { ArrowLeft, Download, FileText, AlertCircle, Loader, Star } from 'lucide-react';
 import api from './api';
 
 const BookDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [book, setBook] = useState(null);
-  const [pdfUrl, setPdfUrl] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetchBookAndPDF();
+    fetchBook();
   }, [id]);
 
-  const fetchBookAndPDF = async () => {
+  const fetchBook = async () => {
     try {
       setLoading(true);
-      
-      // Récupérer les infos du livre
       const response = await api.get(`/student/books/${id}`);
-      setBook(response.data?.data);
-      
-      // Charger le PDF
-      const pdfResponse = await api.get(`/student/books/${id}/download`, {
-        responseType: 'blob'
-      });
-      
-      const url = URL.createObjectURL(new Blob([pdfResponse.data], { type: 'application/pdf' }));
-      setPdfUrl(url);
-      
+      const bookData = response.data?.data;
+
+      if (!bookData) {
+        setError('Livre non trouvé');
+      } else {
+        setBook(bookData);
+      }
+
+      setLoading(false);
     } catch (err) {
       console.error('Erreur:', err);
-      setError(err.response?.data?.message || 'Impossible de charger le livre');
-    } finally {
+      setError('Impossible de charger le livre');
       setLoading(false);
     }
   };
 
-  const handleDownload = async () => {
+  const handleRead = async () => {
+    if (!book?.id) return;
     try {
-      const response = await api.get(`/student/books/${id}/download`, {
-        responseType: 'blob'
+      const response = await api.get(`/student/books/${book.id}/download`, {
+        responseType: 'blob',
       });
-      
-      const blob = new Blob([response.data], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = book?.file_name || `book_${id}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-      
-    } catch (err) {
-      console.error('Erreur téléchargement:', err);
-      alert('Erreur lors du téléchargement');
+      const url = window.URL.createObjectURL(
+        new Blob([response.data], { type: 'application/pdf' })
+      );
+      window.open(url, '_blank');
+    } catch (error) {
+      console.error('Erreur lecture:', error);
+      alert('PDF non disponible');
     }
   };
 
-  const openPDF = () => {
-    if (pdfUrl) {
-      window.open(pdfUrl, '_blank');
+  const handleDownload = async () => {
+    if (!book?.id) return;
+    try {
+      const response = await api.get(`/student/books/${book.id}/download`, {
+        responseType: 'blob',
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = book.file_name || `${book.title}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Erreur téléchargement:', error);
+      alert('Erreur lors du téléchargement');
     }
   };
 
@@ -84,7 +87,7 @@ const BookDetails = () => {
           <p className="text-gray-600 mb-6">{error || 'Livre non trouvé'}</p>
           <button
             onClick={() => navigate('/library')}
-            className="px-6 py-2 bg-[#002366] text-white rounded-lg"
+            className="px-6 py-2 bg-[#002366] text-white rounded-lg hover:bg-[#001a4f] transition"
           >
             Retour à la bibliothèque
           </button>
@@ -100,7 +103,7 @@ const BookDetails = () => {
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <button
             onClick={() => navigate('/library')}
-            className="flex items-center gap-2 text-gray-600 hover:text-[#002366]"
+            className="flex items-center gap-2 text-gray-600 hover:text-[#002366] transition"
           >
             <ArrowLeft className="w-5 h-5" />
             <span>Retour</span>
@@ -108,19 +111,19 @@ const BookDetails = () => {
           
           <div className="flex gap-3">
             <button
-              onClick={openPDF}
-              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+              onClick={handleRead}
+              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
             >
               <FileText className="w-4 h-4" />
-              <span>Ouvrir dans nouvel onglet</span>
+              Lire maintenant
             </button>
             
             <button
               onClick={handleDownload}
-              className="flex items-center gap-2 px-4 py-2 bg-[#002366] text-white rounded-lg hover:bg-[#001a4f]"
+              className="flex items-center gap-2 px-4 py-2 bg-[#002366] text-white rounded-lg hover:bg-[#001a4f] transition"
             >
               <Download className="w-4 h-4" />
-              <span>Télécharger</span>
+              Télécharger PDF
             </button>
           </div>
         </div>
@@ -176,33 +179,23 @@ const BookDetails = () => {
               
               <div className="flex gap-4">
                 <button
-                  onClick={openPDF}
-                  className="flex-1 py-3 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700"
+                  onClick={handleRead}
+                  className="flex-1 py-3 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 transition flex items-center justify-center gap-2"
                 >
+                  <FileText size={18} />
                   📖 Lire maintenant
                 </button>
                 <button
                   onClick={handleDownload}
-                  className="flex-1 py-3 bg-[#002366] text-white rounded-xl font-bold hover:bg-[#001a4f]"
+                  className="flex-1 py-3 bg-[#002366] text-white rounded-xl font-bold hover:bg-[#001a4f] transition flex items-center justify-center gap-2"
                 >
+                  <Download size={18} />
                   💾 Télécharger PDF
                 </button>
               </div>
             </div>
           </div>
         </div>
-        
-        {/* Aperçu PDF */}
-        {pdfUrl && (
-          <div className="mt-8 bg-white rounded-2xl shadow-sm p-4">
-            <h2 className="text-xl font-bold mb-4">Aperçu</h2>
-            <iframe
-              src={pdfUrl}
-              className="w-full h-[600px] rounded-lg border"
-              title="PDF Preview"
-            />
-          </div>
-        )}
       </div>
     </div>
   );
