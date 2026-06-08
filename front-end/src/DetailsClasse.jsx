@@ -83,7 +83,7 @@ export default function DetailsClasse() {
   }
 
   const handleRetour = () => {
-    navigate("/ListeClasses");
+    navigate("/admin/Classes");
   };
 
   return (

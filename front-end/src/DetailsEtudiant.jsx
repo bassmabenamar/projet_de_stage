@@ -30,7 +30,7 @@ export default function DetailsEtudiant() {
     if (!etudiants) return <div>Loading...</div>;
 
   const handleRetour = () => {
-    navigate("/ListeEtudiants")
+    navigate("/admin/etudiants")
   };
 
   const getInitials = () => {
@@ -212,10 +212,10 @@ export default function DetailsEtudiant() {
               <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4">Actions</h3>
                 <div className="flex gap-3">
-                  <button onClick={()=>navigate("/ModifierEtudiants")} className="flex-1 px-4 py-2 bg-[#2F5D9F] text-white rounded-lg font-medium hover:bg-[#1e3d6b] transition-colors">
+                  <button onClick={()=>navigate("/admin/etudiants/edit")} className="flex-1 px-4 py-2 bg-[#2F5D9F] text-white rounded-lg font-medium hover:bg-[#1e3d6b] transition-colors">
                     Modifier
                   </button>
-                  <button onClick={()=>navigate("/ListeEtudiants")} className="flex-1 px-4 py-2 border border-red-500 text-red-500 rounded-lg font-medium hover:bg-red-50 transition-colors">
+                  <button onClick={()=>navigate("//admin/etudiants")} className="flex-1 px-4 py-2 border border-red-500 text-red-500 rounded-lg font-medium hover:bg-red-50 transition-colors">
                     Supprimer
                   </button>
                 </div>

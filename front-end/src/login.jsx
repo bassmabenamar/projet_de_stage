@@ -4,54 +4,51 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
 export default function Login() {
-  const [email,setEmail] = useState("")
-  const [password,setPassword] = useState("")
-  const navigate = useNavigate()
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const navigate = useNavigate();
 
-  function onchangeEmail(e){
-      setEmail(e.target.value)
+  function onchangeEmail(e) {
+    setEmail(e.target.value);
   }
-  function onchangePassword(e){
-      setPassword(e.target.value)
-  }      
+  function onchangePassword(e) {
+    setPassword(e.target.value);
+  }
 
-  async function SignIn(e){
-        e.preventDefault();
-        try{
-        const reponse = await axios.post("http://127.0.0.1:8000/api/login",{
-            email,
-            password
-        })
-        const user = reponse.data.user;
-        const token = reponse.data.token;
+  async function SignIn(e) {
+    e.preventDefault();
+    try {
+      const reponse = await axios.post("http://127.0.0.1:8000/api/login", {
+        email,
+        password,
+      });
+      const user = reponse.data.user;
+      const token = reponse.data.token;
 
-        localStorage.setItem("token", token)
-        if(user.role === "admin"){
-          navigate("/Dashboard")
-        }
-        if(user.role === "formateur"){
-          navigate("/ListeFormateurs")
-        }
-        if(user.role === "etudiant"){
-          navigate("/ListeEtudiants")
-        }
-        
-        }   
-        catch(error){
-            console.error("Login failed:", error);
-            alert("Login failed. Please check your credentials and try again.");
-        }
+      localStorage.setItem("token", token);
+      localStorage.setItem("user", JSON.stringify(user));
+      localStorage.setItem("role", user.role);
+
+      if (user.role === "admin")     navigate("/admin/dashboard");
+      if (user.role === "formateur") navigate("/teacher/dashboard");
+      if (user.role === "etudiant")  navigate("/student/dashboard");
+
+    } catch (error) {
+      console.error("Login failed:", error);
+      alert("Login failed. Please check your credentials and try again.");
     }
+  }
+
   return (
     <div className="min-h-screen bg-white flex">
-      
+
       {/* Left Side - Logo */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-[#2F5D9F] to-[#E55B2D] flex-col items-center justify-center p-12">
         <div className="text-center">
           <div className="bg-white/95 w-32 h-32 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl">
             <img src="/amity.png" alt="Amity School" className="w-32 h-32 object-contain" />
           </div>
-          <h1 className="text-white text-4xl font-bold tracking-tight mb-3">AMITY SCHOOL</h1>
+          <h1 className="text-white text-4xl font-bold tracking-tight mb-3">AMITY INTERNATIONNAL SCHOOL</h1>
           <p className="text-white/80 text-sm font-medium">Portail d'excellence académique</p>
           <div className="mt-8 flex justify-center gap-2">
             <div className="w-12 h-1 bg-white/30 rounded-full"></div>
@@ -65,8 +62,8 @@ export default function Login() {
       {/* Right Side - Login Form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
         <div className="w-full max-w-[400px]">
-          
-          {/* Mobile Logo (visible seulement sur mobile) */}
+
+          {/* Mobile Logo */}
           <div className="lg:hidden text-center mb-8">
             <div className="bg-gradient-to-br from-[#2F5D9F] to-[#E55B2D] w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
               <img src="/amity.png" alt="Amity School" className="w-14 h-14 object-contain" />
@@ -87,7 +84,13 @@ export default function Login() {
                 <label className="block text-[11px] font-bold text-gray-600 uppercase">Email ou nom d'utilisateur</label>
                 <div className="relative">
                   <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                  <input type="text" value={email} onChange={onchangeEmail} placeholder="Entrez vos identifiants" className="w-full border border-gray-200 rounded-lg py-3.5 pl-11 pr-4 outline-none focus:border-[#2F5D9F] focus:ring-2 focus:ring-[#2F5D9F]/80 transition-all text-sm font-medium text-gray-700 placeholder:text-gray-300"/>
+                  <input
+                    type="text"
+                    value={email}
+                    onChange={onchangeEmail}
+                    placeholder="Entrez vos identifiants"
+                    className="w-full border border-gray-200 rounded-lg py-3.5 pl-11 pr-4 outline-none focus:border-[#2F5D9F] focus:ring-2 focus:ring-[#2F5D9F]/80 transition-all text-sm font-medium text-gray-700 placeholder:text-gray-300"
+                  />
                 </div>
               </div>
 
@@ -95,7 +98,13 @@ export default function Login() {
                 <label className="block text-[11px] font-bold text-gray-600 uppercase">Mot de passe</label>
                 <div className="relative">
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                  <input type="password" value={password} onChange={onchangePassword} placeholder="••••••••" className="w-full border border-gray-200 rounded-lg py-3.5 pl-11 pr-4 outline-none focus:border-[#2F5D9F] focus:ring-2 focus:ring-[#2F5D9F]/80 transition-all text-sm font-medium text-gray-700 placeholder:text-gray-300"/>
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={onchangePassword}
+                    placeholder="••••••••"
+                    className="w-full border border-gray-200 rounded-lg py-3.5 pl-11 pr-4 outline-none focus:border-[#2F5D9F] focus:ring-2 focus:ring-[#2F5D9F]/80 transition-all text-sm font-medium text-gray-700 placeholder:text-gray-300"
+                  />
                 </div>
               </div>
 
@@ -106,15 +115,19 @@ export default function Login() {
                 </label>
               </div>
 
-              <button onClick={SignIn} type="submit"className="w-full bg-[#E55B2D] text-white py-3.5 rounded-lg font-bold uppercase text-xs tracking-wider flex items-center justify-center gap-2 hover:bg-[#c44d24] transition-all">
-                Se connecter <LogIn size={14}/>
+              <button
+                onClick={SignIn}
+                type="submit"
+                className="w-full bg-[#E55B2D] text-white py-3.5 rounded-lg font-bold uppercase text-xs tracking-wider flex items-center justify-center gap-2 hover:bg-[#c44d24] transition-all"
+              >
+                Se connecter <LogIn size={14} />
               </button>
             </div>
 
             {/* Support Section */}
             <div className="mt-6 pt-6 border-t border-gray-100 text-center">
               <button className="inline-flex items-center gap-1.5 text-[11px] font-medium text-gray-500 hover:text-gray-700 transition-all">
-                Besoin d'aide ? <HelpCircle size={14} /> 
+                Besoin d'aide ? <HelpCircle size={14} />
                 <span className="underline underline-offset-2">Contacter le support</span>
               </button>
             </div>

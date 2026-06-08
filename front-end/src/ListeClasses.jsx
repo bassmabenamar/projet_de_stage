@@ -63,7 +63,7 @@ export default function ListeClasses() {
               <h1 className="text-3xl font-semibold m-0 mb-2 text-gray-800">Liste des classes</h1>
               <p className="text-gray-500 m-0">Gérez les classes de votre école.</p>
             </div>
-            <button onClick={() => navigate("/AjouterClasse")} className="px-4 py-2 bg-[#E55B2D] text-white rounded-lg font-medium flex items-center gap-2 hover:bg-[#c44d24] transition-colors shadow-sm whitespace-nowrap">
+            <button onClick={() => navigate("/admin/classes/add")} className="px-4 py-2 bg-[#E55B2D] text-white rounded-lg font-medium flex items-center gap-2 hover:bg-[#c44d24] transition-colors shadow-sm whitespace-nowrap">
               <Plus size={18} />
               Ajouter une classe
             </button>
@@ -127,10 +127,10 @@ export default function ListeClasses() {
                         </td> */}
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center gap-2">
-                            <button onClick={() => navigate(`/DetailsClasse/${classe.id}`)} className="p-1.5 text-blue-500 hover:text-blue-700 transition-colors" title="Détails">
+                            <button onClick={() => navigate(`/admin/classes/details/${classe.id}`)} className="p-1.5 text-blue-500 hover:text-blue-700 transition-colors" title="Détails">
                               <Eye size={18} />
                             </button>
-                            <button onClick={() => navigate(`/ModifierClasse/${classe.id}`)} className="p-1.5 text-[#2F5D9F] hover:text-[#1e3d6b] transition-colors" title="Modifier">
+                            <button onClick={() => navigate(`/admin/classes/edit/${classe.id}`)} className="p-1.5 text-[#2F5D9F] hover:text-[#1e3d6b] transition-colors" title="Modifier">
                               <Edit size={18} />
                             </button>
                             <button onClick={() => DeleteClasse(classe.id)} className="p-1.5 text-red-500 hover:text-red-700 transition-colors" title="Supprimer">

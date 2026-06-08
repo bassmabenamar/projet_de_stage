@@ -194,7 +194,7 @@ export default function AdminSubjects() {
             />
           </div>
           <button
-            onClick={() => navigate('/matieres/nouveau')}
+            onClick={() => navigate('/admin/matieres/nouveau')}
             className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-white rounded-xl whitespace-nowrap transition-opacity hover:opacity-90"
             style={{ background: '#E55B2D' }}
           >

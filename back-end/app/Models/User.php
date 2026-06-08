@@ -19,6 +19,14 @@ class User extends Authenticatable implements JWTSubject
         'phone',
         'adresse',
         'photo',
+        'genre',
+        'date_naissance',
+        'date_inscription',
+        'status',
+        'classe_id',
+        'filiere_id',
+        'niveau_scolaire_id',
+        'transport_id',
     ];
 
     protected $hidden = [
@@ -35,28 +43,54 @@ class User extends Authenticatable implements JWTSubject
     {
         return [];
     }
-     // ✅ Conversations où l'utilisateur est user_one
+
+    // ── Relationships ─────────────────────────────────────────────────────────
+
+    public function classe()
+    {
+        return $this->belongsTo(Classe::class, 'classe_id');
+    }
+
+    public function filiere()
+    {
+        return $this->belongsTo(Filiere::class, 'filiere_id');
+    }
+
+    public function niveauScolaire()
+    {
+        return $this->belongsTo(NiveauScolaire::class, 'niveau_scolaire_id');
+    }
+
+    public function transport()
+    {
+        return $this->belongsTo(Transport::class, 'transport_id');
+    }
+
+    // For formateurs: classes they teach (many-to-many)
+    public function classesFormateur()
+    {
+        return $this->belongsToMany(Classe::class, 'classe_formateur', 'formateur_id', 'classe_id');
+    }
+
+    // ── Chat ──────────────────────────────────────────────────────────────────
+
     public function conversationsAsUserOne()
     {
         return $this->hasMany(Conversation::class, 'user_one_id');
     }
 
-    // ✅ Conversations où l'utilisateur est user_two
     public function conversationsAsUserTwo()
     {
         return $this->hasMany(Conversation::class, 'user_two_id');
     }
 
-    // ✅ Toutes les conversations de l'utilisateur
     public function conversations()
     {
         return $this->conversationsAsUserOne->merge($this->conversationsAsUserTwo);
     }
 
-    // ✅ Messages envoyés par l'utilisateur
     public function sentMessages()
     {
         return $this->hasMany(Message::class, 'sender_id');
     }
 }
-

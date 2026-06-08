@@ -143,7 +143,7 @@ export default function ModifierEtudiant() {
   }
 
   const handleRetour = () => {
-    navigate("/ListeEtudiants")
+    navigate("/admin/etudiants")
   };
 
   async function UpdateEtudiant(e) {
@@ -180,7 +180,7 @@ export default function ModifierEtudiant() {
         }
       );
 
-      navigate("/ListeEtudiants")
+      navigate("/admin/etudiants")
     } catch (error) {
       console.log("ERROR BACKEND:", error.response.data);
     }

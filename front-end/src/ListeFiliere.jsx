@@ -28,7 +28,7 @@ export default function ListeFiliere() {
   },[])
 
   const handleAjouter = () => {
-    navigate("/AjouterFiliere");
+    navigate("/admin/filieres/add");
   };
 
   async function DeleteFiliere(id) {
@@ -108,7 +108,7 @@ export default function ListeFiliere() {
                   <td className="py-3 px-4 text-sm text-gray-500">{filiere.description}</td>
                   <td className="py-3 px-4 text-center">
                     <div className="flex justify-center gap-2">
-                      <button onClick={() => navigate(`/ModifierFiliere/${filiere.id}`)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" >
+                      <button onClick={() => navigate(`/admin/filieres/edit/${filiere.id}`)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" >
                         <Edit size={18} />
                       </button>
                       <button onClick={() => DeleteFiliere(filiere.id)} className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors">

@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Play, Clock, User, Eye, ThumbsUp, 
-  Search, Filter, BookOpen, ChevronRight,
-  Award, TrendingUp, Video, Headphones, Calendar
+  Search, BookOpen, ChevronRight,
+  Award, Video
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from './Navbar';
@@ -96,7 +96,7 @@ const Tutorials = () => {
               <motion.button 
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => navigate(`/tutorials/${tutorial.id}/details`)}
+                onClick={() => tutorials.length > 0 && navigate(`/tutorials/${tutorials[0].id}`)}
                 className="flex items-center gap-2 px-6 py-3 bg-[#002366] text-white rounded-xl text-[10px] font-black shadow-lg uppercase tracking-widest"
               >
                 <Play size={14} /> Continuer
@@ -193,7 +193,7 @@ const TutorialCard = ({ tutorial, navigate, onView }) => (
     className="bg-white rounded-[32px] border border-slate-100 shadow-sm overflow-hidden group cursor-pointer"
     onClick={() => {
       onView();
-      navigate(`/tutorials/${tutorial.id}`);
+      navigate(`/student/tutorials/${tutorial.id}`);
     }}
   >
     <div className="relative h-48 bg-gradient-to-br from-[#002366] to-blue-800 flex items-center justify-center">

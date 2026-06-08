@@ -57,7 +57,7 @@ export default function ListeEtudiants() {
   const etudiantsActuels = filteredEtudiants.slice(indexPremierEtudiant,indexDernierEtudiant);
 
   const handleAjouter = () => {
-    navigate("/AjouterEtudiant")
+    navigate("/admin/etudiants/add");
   };
 
   // const handleModifier = (id) => {
@@ -132,10 +132,10 @@ export default function ListeEtudiants() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center gap-2">
-                            <button onClick={() => navigate(`/DetailsEtudiant/${etudiant.id}`)} className="p-1.5 text-blue-500 hover:text-blue-700 transition-colors" title="Détails">
+                            <button onClick={() => navigate(`/admin/etudiants/edit/${etudiant.id}`)} className="p-1.5 text-blue-500 hover:text-blue-700 transition-colors" title="Détails">
                               <Eye size={18} />
                             </button>
-                            <button onClick={() => navigate(`/ModifierEtudiant/${etudiant.id}`)} className="p-1.5 text-[#2F5D9F] hover:text-[#1e3d6b] transition-colors" title="Modifier">
+                            <button onClick={() => navigate(`/admin/etudiants/detailst/${etudiant.id}`)} className="p-1.5 text-[#2F5D9F] hover:text-[#1e3d6b] transition-colors" title="Modifier">
                               <Edit size={18} />
                             </button>
                             <button onClick={() => DeleteEtudiant(etudiant.id)} className="p-1.5 text-red-500 hover:text-red-700 transition-colors" title="Supprimer">

@@ -44,7 +44,7 @@ export default function AjouterEtudiant() {
       headers: {
          Authorization: `Bearer ${localStorage.getItem("token")}`
       }
-    }).then((response) => {setTransports(response.data);})
+    }).then((response) => {setTransports(response.data.data);})
     .catch((error) => {console.log(error);});
   }, []);
 
@@ -144,7 +144,7 @@ export default function AjouterEtudiant() {
         }
       );
 
-      navigate("/ListeEtudiants");
+      navigate("/admin/etudiants");
     } catch (error) {
       console.log("ERROR BACKEND:", error.response.data);
     }
@@ -175,7 +175,7 @@ export default function AjouterEtudiant() {
         <div className="p-6">
           {/* Header avec bouton retour */}
           <div className="flex items-center gap-4 mb-6">
-            <button onClick={()=>navigate("/ListeEtudiants")} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+            <button onClick={()=>navigate("/admin/etudiants")} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
               <ArrowLeft size={20} className="text-gray-600" />
             </button>
             <div>

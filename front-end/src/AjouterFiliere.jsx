@@ -40,7 +40,7 @@ export default function AjouterFiliere() {
         }
       );
 
-      navigate("/ListeFiliere");
+      navigate("/admin/Filieres");
     } catch (error) {
       console.log(error.response?.data?.errors);
     }
@@ -56,7 +56,7 @@ export default function AjouterFiliere() {
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
       <div className="flex items-center gap-4 mb-6">
-        <button onClick={()=> navigate("/ListeFiliere")} className="p-2 hover:bg-gray-200 rounded-lg transition-colors">
+        <button onClick={()=> navigate("/admin/Filieres")} className="p-2 hover:bg-gray-200 rounded-lg transition-colors">
           <ArrowLeft size={20} className="text-gray-600" />
         </button>
         <div>

@@ -66,7 +66,7 @@ export default function ModifierFormateur() {
     }, []);
 
   const handleRetour = () => {
-    navigate("/ListeFormateurs")
+    navigate("/admin/formateurs")
   };
 
   if (!formateur) return <div>Loading...</div>;
@@ -143,7 +143,7 @@ export default function ModifierFormateur() {
         }
       );
 
-      navigate("/ListeFormateurs");
+      navigate("/admin/formateurs");
     } catch (error) {
       console.log("ERROR BACKEND:", error.response.data);
     }

@@ -55,7 +55,7 @@ export default function AjouterSalle() {
         }
       );
 
-      navigate("/ListeSalles");
+      navigate("/admin/Salles");
     } catch (error) {
       console.log(error.response?.data?.errors);
     }
@@ -75,7 +75,7 @@ export default function AjouterSalle() {
       <div className="flex-1 flex flex-col overflow-auto">
         <div className="p-6">
           <div className="flex items-center gap-4 mb-6">
-            <button onClick={()=> navigate("/ListeSalles")} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+            <button onClick={()=> navigate("/admin/Salles")} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
               <ArrowLeft size={20} className="text-gray-600" />
             </button>
             <div>

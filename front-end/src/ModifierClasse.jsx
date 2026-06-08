@@ -103,7 +103,7 @@ export default function ModifierClasse() {
   }
 
   const handleRetour = () => {
-    navigate("/ListeClasses");
+    navigate("/admin/Classes");
   };
 
   async function ClasseUpdate(e) {
@@ -128,7 +128,7 @@ export default function ModifierClasse() {
         }
       );
 
-      navigate("/ListeClasses");
+      navigate("/admin/Classes");
     } catch (error) {
       console.log(error.response?.data?.errors);
     }

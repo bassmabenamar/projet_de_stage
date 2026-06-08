@@ -69,7 +69,7 @@ export default function ModifierFiliere() {
         }
       );
 
-      navigate("/ListeFiliere");
+      navigate("/admin/filieres");
     } catch (error) {
       console.log(error.response?.data?.errors);
     }
@@ -87,7 +87,7 @@ export default function ModifierFiliere() {
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
       <div className="flex items-center gap-4 mb-6">
-        <button onClick={()=> navigate("/ListeFiliere")} className="p-2 hover:bg-gray-200 rounded-lg transition-colors">
+        <button onClick={()=> navigate("/amin/filieres")} className="p-2 hover:bg-gray-200 rounded-lg transition-colors">
           <ArrowLeft size={20} className="text-gray-600" />
         </button>
         <div>

@@ -101,7 +101,7 @@ async function FormateurAjouter(e) {
         }
       );
 
-      navigate("/ListeFormateurs");
+      navigate("/admin/Formateurs");
     } catch (error) {
       console.log("ERROR BACKEND:", error.response.data);
     }
@@ -123,7 +123,7 @@ async function FormateurAjouter(e) {
     }
 
   const handleRetour = () => {
-    navigate("/ListeFormateurs")
+    navigate("/admin/Formateurs")
   };
 
   return (

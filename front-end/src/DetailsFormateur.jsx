@@ -31,7 +31,7 @@ export default function DetailsFormateur() {
     if (!formateur) return <div>Loading...</div>;
 
   const handleRetour = () => {
-    navigate("/ListeFormateurs")
+    navigate("/admin/formateurs")
   };
 
   const getInitials = () => {
@@ -52,7 +52,7 @@ export default function DetailsFormateur() {
         },
       });
 
-      navigate("/ListeFormateurs");
+      navigate("/admin/formateurs");
 
       }catch (error) {
       console.log(error);

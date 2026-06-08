@@ -92,7 +92,7 @@ export default function ModifierSalle() {
         }
       );
 
-      navigate("/ListeSalles");
+      navigate("/admin/Salles");
     } catch (error) {
       console.log(error.response?.data?.errors);
     }
@@ -110,7 +110,7 @@ export default function ModifierSalle() {
   }
 
   const handleRetour = () => {
-    navigate("/ListeSalles")
+    navigate("/admin/Salles")
   };
 
   return (

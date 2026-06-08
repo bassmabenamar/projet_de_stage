@@ -29,7 +29,7 @@ export default function ListeSalles() {
 
 
   const handleAjouter = () => {
-    navigate("/AjouterSalle")
+    navigate("/admin/Salles/add")
   };
 
   const getStatusBadge = (status) => {
@@ -152,10 +152,10 @@ const totalPages = Math.ceil(filteredSalles.length / sallesParPage);
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center gap-2">
-                            <button onClick={() => navigate(`/DetailsSalle/${salle.id}`)} className="p-1.5 text-blue-500 hover:text-blue-700 transition-colors" title="Détails">
+                            <button onClick={() => navigate(`/admin/salles/details/${salle.id}`)} className="p-1.5 text-blue-500 hover:text-blue-700 transition-colors" title="Détails">
                               <Eye size={18} />
                             </button>
-                            <button onClick={() => navigate(`/ModifierSalle/${salle.id}`)} className="p-1.5 text-[#2F5D9F] hover:text-[#1e3d6b] transition-colors"title="Modifier">
+                            <button onClick={() => navigate(`/admin/salles/edit/${salle.id}`)} className="p-1.5 text-[#2F5D9F] hover:text-[#1e3d6b] transition-colors"title="Modifier">
                               <Edit size={18} />
                             </button>
                             <button onClick={() => DeleteSalle(salle.id)} className="p-1.5 text-red-500 hover:text-red-700 transition-colors" title="Supprimer">

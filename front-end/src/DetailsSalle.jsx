@@ -56,7 +56,7 @@ export default function DetailsSalle() {
     ]
 
   const handleRetour = () => {
-    navigate("/ListeSalles")
+    navigate("/admin/Salles")
   };
 
   async function DeleteSalle(id) {
@@ -67,7 +67,7 @@ export default function DetailsSalle() {
       }
     });
 
-    navigate("/ListeSalles");
+    navigate("/admin/Salles");
   } catch (error) {
     console.log(error);
   }

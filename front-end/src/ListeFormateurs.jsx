@@ -59,7 +59,7 @@ export default function ListeFormateurs() {
   
 
   const handleAjouter = () => {
-    navigate("/AjouterFormateur")
+    navigate("/admin/formateur/add")
   };
 
   return (
@@ -131,10 +131,10 @@ export default function ListeFormateurs() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center gap-2">
-                            <button onClick={() => navigate(`/DetailsFormateur/${formateur.id}`)} className="p-1.5 text-blue-500 hover:text-blue-700 transition-colors" title="Détails">
+                            <button onClick={() => navigate(`/admin/formateurs/details/${formateur.id}`)} className="p-1.5 text-blue-500 hover:text-blue-700 transition-colors" title="Détails">
                               <Eye size={18} />
                             </button>
-                            <button onClick={() => navigate(`/ModifierFormateur/${formateur.id}`)} className="p-1.5 text-[#2F5D9F] hover:text-[#1e3d6b] transition-colors" title="Modifier">
+                            <button onClick={() => navigate(`/admin/formateurs/edit/${formateur.id}`)} className="p-1.5 text-[#2F5D9F] hover:text-[#1e3d6b] transition-colors" title="Modifier">
                               <Edit size={18} />
                             </button>
                             <button onClick={() => DeleteFormateur(formateur.id)} className="p-1.5 text-red-500 hover:text-red-700 transition-colors" title="Supprimer">

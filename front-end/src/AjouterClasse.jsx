@@ -68,7 +68,7 @@ export default function AjouterClasse() {
   }
 
   const handleRetour = () => {
-    navigate("/ListeClasses");
+    navigate("/admin/classes");
   };
 
 
@@ -94,7 +94,7 @@ export default function AjouterClasse() {
         }
       );
 
-      navigate("/ListeClasses");
+      navigate("/admin/classes");
     } catch (error) {
       console.log(error.response?.data?.errors);
     }
