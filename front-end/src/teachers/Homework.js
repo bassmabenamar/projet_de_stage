@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, CloudUpload, Info, ChevronDown, Plus } from 'lucide-react';
 
-import Sidebar from './Sidebar'; 
-import Navbar from './Navbar';
+
 
 const HomeworkPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(true);
@@ -11,11 +10,11 @@ const HomeworkPage = () => {
   return (
     <div className="flex min-h-screen bg-[#F8FAFC]">
       {/* 1. Sidebar dyalk */}
-      <Sidebar />
+   
 
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
         {/* 2. Navbar dyalk */}
-        <Navbar />
+   
 
         {/* 3. Main Content Area */}
         <main className="flex-1 overflow-y-auto p-10 relative">

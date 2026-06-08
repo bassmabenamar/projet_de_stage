@@ -7,8 +7,7 @@ import {
   Check, Info, MessageSquare, AlertCircle
 } from 'lucide-react';
 
-import Sidebar from './Sidebar';
-import Navbar from './Navbar';
+
 
 const SubmissionsPage = () => {
   const [selectedStudent, setSelectedStudent] = useState(null);
@@ -22,10 +21,10 @@ const SubmissionsPage = () => {
 
   return (
     <div className="flex min-h-screen bg-[#F8FAFC]">
-      <Sidebar />
+     
 
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
-        <Navbar />
+    
 
         <main className="flex-1 overflow-y-auto p-8 custom-scrollbar">
           {/* Breadcrumbs & Header */}

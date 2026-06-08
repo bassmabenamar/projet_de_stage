@@ -12,19 +12,19 @@ export default function Sidebar() {
   const location = useLocation(); 
 
   const menuItems = [
-    { id: "dashboard", label: "Tableau de bord", path: "/dashboard", icon: <LayoutDashboard size={20} /> },
-    { id: "messages", label: "Messages", path: "/messages", icon: <MessageSquare size={20} /> },
-    { id: "notifications", label: "Notifications", path: "/notifications", icon: <Bell size={20} /> },
-    { id: "timetable", label: "Emploi du temps", path: "/timetable", icon: <Clock size={20} /> },
-    { id: "grades", label: "Mes Notes", path: "/grades", icon: <ClipboardCheck size={20} /> },
-    { id: "attendance", label: "Absences", path: "/attendance", icon: <CalendarX size={20} /> },
-    { id: "homework", label: "Devoirs", path: "/homework", icon: <FileText size={20} /> },
-    { id: "activities", label: "Activités", path: "/activities", icon: <CalendarDays size={20} /> },
-    { id: "payment", label: "Payment", path: "/payment", icon: <CreditCard size={20} /> },
-    { id: "settings", label: "Paramétres", path: "/paramétres", icon: <MessageSquareWarning size={20} /> },
-     { id: "library", label: "Bibliothèque", path: "/library", icon: <Library size={20} /> },
+    { id: "dashboard", label: "Tableau de bord", path: "/Etudiants/dashboard", icon: <LayoutDashboard size={20} /> },
+    { id: "messages", label: "Messages", path: "/Etudiants/messages", icon: <MessageSquare size={20} /> },
+    { id: "notifications", label: "Notifications", path: "/Etudiants/notifications", icon: <Bell size={20} /> },
+    { id: "timetable", label: "Emploi du temps", path: "/Etudiants/timetable", icon: <Clock size={20} /> },
+    { id: "grades", label: "Mes Notes", path: "/Etudiants/grades", icon: <ClipboardCheck size={20} /> },
+    { id: "attendance", label: "Absences", path: "/Etudiants/attendance", icon: <CalendarX size={20} /> },
+    { id: "homework", label: "Devoirs", path: "/Etudiants/homework", icon: <FileText size={20} /> },
+    { id: "activities", label: "Activités", path: "/Etudiants/activities", icon: <CalendarDays size={20} /> },
+    { id: "payment", label: "Payment", path: "/Etudiants/payment", icon: <CreditCard size={20} /> },
+    { id: "settings", label: "Paramétres", path: "/Etudiants/paramétres", icon: <MessageSquareWarning size={20} /> },
+     { id: "library", label: "Bibliothèque", path: "/Etudiants/library", icon: <Library size={20} /> },
     
-      { id: "tutorials", label: "Tutorials", path: "/Tutorials", icon: <VideoIcon size={20} /> },
+      { id: "tutorials", label: "Tutorials", path: "/Etudiants/Tutorials", icon: <VideoIcon size={20} /> },
       
   ];
 

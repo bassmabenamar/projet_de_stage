@@ -9,6 +9,7 @@ const USER_ROLES = {
   STUDENT: 'etudiant'
 };
 
+
 // ─── Loading Component ────────────────────────────────────────────────────────
 const LoadingSpinner = () => (
   <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-orange-50">
@@ -21,7 +22,7 @@ const LoadingSpinner = () => (
   </div>
 );
 
-// ─── Lazy Load Components for Better Performance ──────────────────────────────
+// ─── Lazy Load Components ─────────────────────────────────────────────────────
 // Admin Components
 const AdminLayout = lazy(() => import("./layouts/AdminLayout"));
 const AdminDashboard = lazy(() => import("./Dashboard"));
@@ -46,7 +47,7 @@ const AdminMessages = lazy(() => import("./pages/admin/Messages"));
 const NotesPage = lazy(() => import("./pages/admin/NotesPage"));
 const AbsencesPage = lazy(() => import("./pages/admin/AbsencesPage"));
 
-// CRUD Admin: Classes, Etudiants, Filières, Formateurs, Salles
+// CRUD Admin
 const ListeClasses = lazy(() => import("./ListeClasses"));
 const AjouterClasse = lazy(() => import("./AjouterClasse"));
 const ModifierClasse = lazy(() => import("./ModifierClasse"));
@@ -70,9 +71,6 @@ const AjouterSalle = lazy(() => import("./AjouterSalle"));
 const ModifierSalle = lazy(() => import("./ModifierSalle"));
 const DetailsSalle = lazy(() => import("./DetailsSalle"));
 
-// Legacy list routes (kept for backward compatibility)
-const EtudiantsPage = lazy(() => import("./ListeEtudiants"));
-const FormateursPage = lazy(() => import("./ListeFormateurs"));
 // Teacher Components
 const TeacherSidebar = lazy(() => import("./teachers/Sidebar"));
 const TeacherDashboard = lazy(() => import("./teachers/TeacherDashboard"));
@@ -144,36 +142,12 @@ const StudentLayout = () => (
   </AppShell>
 );
 
-// ─── Role Guard Component with Enhanced Security ──────────────────────────────
+// ─── Role Guard — Synchronous (fixes navigation remount bug) ──────────────────
 const RequireRole = ({ role, children, redirectTo = "/login" }) => {
-  const [isAuthorized, setIsAuthorized] = useState(null);
   const token = localStorage.getItem("token");
   const userRole = localStorage.getItem("role");
 
-  useEffect(() => {
-    // Validate token with backend (optional but recommended)
-    const validateSession = async () => {
-      if (!token) {
-        setIsAuthorized(false);
-        return;
-      }
-
-      // You can add API validation here if needed
-      // const isValid = await validateTokenWithBackend(token);
-      // setIsAuthorized(isValid && userRole === role);
-      
-      setIsAuthorized(userRole === role);
-    };
-
-    validateSession();
-  }, [token, userRole, role]);
-
-  if (isAuthorized === null) {
-    return <LoadingSpinner />;
-  }
-
-  if (!token || !isAuthorized) {
-    // Redirect to appropriate dashboard if already logged in but wrong role
+  if (!token || userRole !== role) {
     if (token && userRole) {
       const roleRedirects = {
         [USER_ROLES.ADMIN]: "/admin/dashboard",
@@ -193,14 +167,10 @@ function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate app initialization
     const initApp = async () => {
-      // You can add app initialization logic here
-      // e.g., load user data, check session, etc.
       await new Promise(resolve => setTimeout(resolve, 500));
       setLoading(false);
     };
-    
     initApp();
   }, []);
 
@@ -212,6 +182,7 @@ function App() {
     <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <Suspense fallback={<LoadingSpinner />}>
         <Routes>
+
           {/* ── Public Routes ───────────────────────────────────────────── */}
           <Route path="/" element={<Home />} />
           <Route path="/home" element={<Home />} />
@@ -220,9 +191,9 @@ function App() {
           <Route path="/academique" element={<Academique />} />
           <Route path="/login" element={<Login />} />
 
-          {/* ── Admin Routes (Nested Layout) ────────────────────────────── */}
-          <Route 
-            path="/admin" 
+          {/* ── Admin Routes ────────────────────────────────────────────── */}
+          <Route
+            path="/admin"
             element={
               <RequireRole role={USER_ROLES.ADMIN}>
                 <AdminLayout />
@@ -234,7 +205,6 @@ function App() {
             <Route path="matieres" element={<AdminSubjects />} />
             <Route path="matieres/nouveau" element={<SubjectFormPage />} />
             <Route path="matieres/modifier/:id" element={<SubjectFormPage />} />
-
             <Route path="activites" element={<AdminActivities />} />
             <Route path="activites/nouveau" element={<ActivityFormPage />} />
             <Route path="activites/modifier/:id" element={<ActivityFormPage />} />
@@ -287,12 +257,11 @@ function App() {
             <Route path="salles/add" element={<AjouterSalle />} />
             <Route path="salles/edit/:id" element={<ModifierSalle />} />
             <Route path="salles/details/:id" element={<DetailsSalle />} />
-
           </Route>
 
-          {/* ── Teacher Routes (Nested Layout) ──────────────────────────── */}
-          <Route 
-            path="/teacher" 
+          {/* ── Teacher Routes ───────────────────────────────────────────── */}
+          <Route
+            path="/teacher"
             element={
               <RequireRole role={USER_ROLES.TEACHER}>
                 <TeacherLayout />
@@ -315,9 +284,9 @@ function App() {
             <Route path="settings" element={<TeacherSettings />} />
           </Route>
 
-          {/* ── Student Routes (Nested Layout) ──────────────────────────── */}
-          <Route 
-            path="/student" 
+          {/* ── Student Routes ───────────────────────────────────────────── */}
+          <Route
+            path="/student"
             element={
               <RequireRole role={USER_ROLES.STUDENT}>
                 <StudentLayout />
@@ -349,14 +318,14 @@ function App() {
             <Route path="support" element={<Support />} />
           </Route>
 
-          {/* ── Unauthorized Page ───────────────────────────────────────── */}
+          {/* ── 403 Unauthorized ─────────────────────────────────────────── */}
           <Route path="/unauthorized" element={
             <div className="min-h-screen flex items-center justify-center bg-gray-50">
               <div className="text-center">
                 <h1 className="text-6xl font-bold text-red-500 mb-4">403</h1>
                 <h2 className="text-2xl font-semibold text-gray-800 mb-4">Unauthorized Access</h2>
                 <p className="text-gray-600 mb-6">You don't have permission to access this page.</p>
-                <button 
+                <button
                   onClick={() => window.location.href = '/login'}
                   className="px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition"
                 >
@@ -368,6 +337,7 @@ function App() {
 
           {/* ── 404 Fallback ─────────────────────────────────────────────── */}
           <Route path="*" element={<Navigate to="/login" replace />} />
+
         </Routes>
       </Suspense>
     </Router>

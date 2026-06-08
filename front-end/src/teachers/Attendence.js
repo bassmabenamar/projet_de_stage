@@ -8,8 +8,7 @@ import {
 } from 'lucide-react';
 
 // Imports dyalk (tأكد f l-file dyalk belli l-path s7i7)
-import Sidebar from './Sidebar';
-import Navbar from './Navbar';
+
 
 const AttendancePage = () => {
   const students = [
@@ -20,15 +19,15 @@ const AttendancePage = () => {
 
   return (
     <div className="flex min-h-screen bg-[#F8FAFC]">
-      <Sidebar />
+    
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
-        <Navbar />
+       
         
         <main className="flex-1 overflow-y-auto p-8 custom-scrollbar">
           {/* --- HEADER SECTION --- */}
           <header className="mb-10 flex justify-between items-end">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Dashboard > <span className="text-[#002366]">Attendance</span></p>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Dashboard  <span className="text-[#002366]">Attendance</span></p>
               <h1 className="text-3xl font-[1000] text-[#002366] tracking-tighter">Attendance Management</h1>
               <p className="text-slate-400 font-bold text-sm mt-1">Manage daily student attendance for your assigned classes.</p>
             </motion.div>

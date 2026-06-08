@@ -6,8 +6,7 @@ import {
   Calendar, Mail, BellOff, ChevronRight, CheckCheck 
 } from 'lucide-react';
 
-import Sidebar from './Sidebar';
-import Navbar from './Navbar';
+
 
 const Messages = () => {
   const [activeTab, setActiveTab] = useState('All');
@@ -28,10 +27,10 @@ const Messages = () => {
 
   return (
     <div className="flex min-h-screen bg-[#F8FAFC] font-sans text-[#1E293B]">
-      <Sidebar />
+   
 
       <main className="flex-1 flex flex-col relative overflow-hidden">
-        <Navbar />
+       
 
         <div className="flex-1 flex overflow-hidden">
           {/* --- 1. CHAT LIST SIDEBAR --- */}

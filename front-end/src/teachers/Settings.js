@@ -5,8 +5,7 @@ import {
   Download, Lock, Eye, Check, ChevronDown 
 } from 'lucide-react';
 
-import Sidebar from './Sidebar';
-import Navbar from './Navbar';
+
 
 const Settings = () => {
   const [theme, setTheme] = useState('light');
@@ -22,10 +21,10 @@ const Settings = () => {
 
   return (
     <div className="flex min-h-screen bg-[#F8FAFC] font-sans text-[#1E293B]">
-      <Sidebar />
+      
 
       <main className="flex-1 flex flex-col relative overflow-hidden">
-        <Navbar />
+       
 
         <div className="flex-1 overflow-y-auto p-10 custom-scrollbar">
           <motion.div 

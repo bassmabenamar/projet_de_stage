@@ -7,8 +7,7 @@ import {
   TrendingUp, Clock
 } from 'lucide-react';
 
-import Sidebar from './Sidebar';
-import Navbar from './Navbar';
+
 
 const Profil = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -25,10 +24,10 @@ const Profil = () => {
 
   return (
     <div className="flex min-h-screen bg-[#F1F5F9] font-sans text-[#1E293B]">
-      <Sidebar />
+    
 
       <main className="flex-1 flex flex-col relative overflow-hidden">
-        <Navbar />
+       
 
         <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
           {/* --- HEADER SECTION --- */}

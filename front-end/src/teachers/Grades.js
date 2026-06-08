@@ -6,8 +6,7 @@ import {
   TrendingUp, Users, BarChart3, ArrowUpRight
 } from 'lucide-react';
 
-import Sidebar from './Sidebar';
-import Navbar from './Navbar';
+
 
 const GradesPage = () => {
   const [students, setStudents] = useState([
@@ -19,9 +18,9 @@ const GradesPage = () => {
 
   return (
     <div className="flex min-h-screen bg-[#F8FAFC]">
-      <Sidebar />
+    
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
-        <Navbar />
+       
         
         <main className="flex-1 overflow-y-auto p-8 custom-scrollbar">
           {/* Breadcrumbs & Title */}
@@ -30,7 +29,7 @@ const GradesPage = () => {
               initial={{ opacity: 0, x: -20 }} 
               animate={{ opacity: 1, x: 0 }}
             >
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2">My Classes > Grade 10-A Mathematics > <span className="text-[#002366]">Grades Management</span></p>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2">My Classes  Grade 10-A Mathematics  <span className="text-[#002366]">Grades Management</span></p>
               <h1 className="text-3xl font-[1000] text-[#002366] tracking-tighter">Grades Management</h1>
               <p className="text-slate-400 font-bold text-[13px] mt-1">Mid-term Examination Assessment • Term 2, 2024</p>
             </motion.div>
